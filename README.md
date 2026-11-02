@@ -31,4 +31,12 @@ Stick Head in Hoboken, New Jersey: run up buildings, bounce off trees, talk to t
 
 Hoboken's layout is hand-built from the real street grid (approximate). Imported maps: © OpenStreetMap contributors (ODbL). It lives in the `nj/` folder.
 
+## Also here: Stick Head AR
+
+Stick Head in your own room, through your phone's camera. Drop him on the floor, run him around with the same moves, put down boxes to wall-run up and bouncy trees, and pinch to resize him.
+
+**Play it:** https://pablokm.github.io/Tuto/ar/
+
+On Android Chrome he's tracked on your real floor (WebXR), so you can walk around him. On iPhone and other browsers it uses the camera plus your phone's tilt, so he stays put while you look around but doesn't follow you if you walk. It lives in the `ar/` folder.
+
 Built with [three.js](https://threejs.org/). Everything is in `index.html`.

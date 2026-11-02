@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Stick Head AR</title>
+<meta name="theme-color" content="#FDBA1C">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#2a2630; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; font-family:'Patrick Hand','Comic Sans MS',cursive; color:#1a1418; }
+  body.nocam { background: linear-gradient(#9AD6F2, #cfe9f5 55%, #b9a98f 55%, #8f7f6a); }
+  #cam { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; display:none; }
+  canvas { position:fixed; inset:0; display:block; z-index:1; }
+  #ui { position:fixed; inset:0; z-index:2; }
+  #touch { position:absolute; inset:0; }
+  .hide { display:none !important; }
+
+  #stickZone { position:absolute; left:0; bottom:0; width:200px; height:225px; border-top-right-radius:60px; }
+  #joy { position:absolute; left:calc(18px + env(safe-area-inset-left)); bottom:calc(18px + env(safe-area-inset-bottom)); width:150px; height:165px; pointer-events:none; }
+  .rbtn { position:absolute; border-radius:50%; border:5px solid rgba(20,16,24,.6); background:rgba(255,255,255,.35);
+    color:rgba(20,16,24,.75); font:inherit; padding:0; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent; }
+  #jump { right:calc(22px + env(safe-area-inset-right)); bottom:calc(26px + env(safe-area-inset-bottom)); width:92px; height:92px; }
+  #jump.on { background:rgba(255,255,255,.65); }
+  #zap { right:calc(128px + env(safe-area-inset-right)); bottom:calc(34px + env(safe-area-inset-bottom)); width:76px; height:76px; transition:background .15s, transform .15s; }
+  #zap.on { background:#7ff3ff; border-color:#141018; transform:scale(1.06); box-shadow:0 0 0 4px rgba(255,240,90,.8); }
+
+  #tools { position:absolute; right:calc(10px + env(safe-area-inset-right)); top:calc(10px + env(safe-area-inset-top)); display:flex; flex-direction:column; gap:8px; }
+  .tbtn { width:48px; height:48px; border-radius:50%; border:4px solid rgba(20,16,24,.6); background:rgba(255,248,230,.85);
+    font:inherit; font-size:22px; line-height:1; padding:0; -webkit-tap-highlight-color:transparent; }
+  .tbtn:active { transform:scale(.92); }
+  #tMusic.off { opacity:.5; text-decoration:line-through; }
+
+  #cross { position:absolute; left:50%; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; pointer-events:none; opacity:.85; }
+  #drop { position:absolute; left:50%; bottom:calc(34px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    font:inherit; font-size:24px; padding:10px 22px; border-radius:18px; border:5px solid #1a1418; background:#FDBA1C; color:#1a1418;
+    box-shadow:0 5px 0 rgba(20,16,24,.4); white-space:nowrap; }
+  #drop:disabled { background:#d9d2c4; color:#6b6370; }
+
+  #hint { pointer-events:none; position:absolute; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+    background:rgba(255,248,230,.94); border:3px solid #1a1418; border-radius:14px; padding:5px 14px;
+    font-size:17px; text-align:center; transition:opacity .6s; width:max-content; max-width:min(70vw, 460px); opacity:0; }
+  #toast { pointer-events:none; position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); font-size:30px; color:#fff;
+    -webkit-text-stroke:2px #1a1418; paint-order:stroke fill; text-shadow:0 3px 0 #1a1418; opacity:0; transition:opacity .4s; white-space:nowrap; }
+
+  #title { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    background: radial-gradient(circle at 50% 40%, #b9e4f7, #8FD0EE 60%, #6fb6d8); padding:20px; box-sizing:border-box; }
+  #title .big { font-size:min(15vw, 84px); color:#FDBA1C; -webkit-text-stroke:3px #1a1418; paint-order:stroke fill; text-shadow:0 6px 0 #1a1418; line-height:.95; }
+  #title .ar { display:inline-block; margin-top:8px; font-size:26px; background:#E8502E; color:#fff; border:4px solid #1a1418; border-radius:12px; padding:0 14px; }
+  #title .njz { margin-top:14px; font-size:18px; background:rgba(237,234,229,.9); padding:2px 12px; border-radius:8px; }
+  #title button { margin-top:26px; font:inherit; font-size:28px; padding:8px 28px; border-radius:18px; border:5px solid #1a1418;
+    background:#fff8e6; box-shadow:0 5px 0 rgba(20,16,24,.4); animation: pulse 1.2s ease-in-out infinite; color:#1a1418; }
+  #title .note { margin-top:18px; font-size:16px; max-width:420px; background:rgba(255,248,230,.85); border-radius:10px; padding:6px 12px; }
+  @keyframes pulse { 50% { transform:scale(1.06); } }
+
+  body:not(.play) #stickZone, body:not(.play) #joy, body:not(.play) #jump, body:not(.play) #zap, body:not(.play) #tools .p { display:none; }
+  body:not(.scan) #drop { display:none; }
+  body.title #tools, body.title #cross { display:none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body class="title">
+<video id="cam" playsinline muted autoplay></video>
+<div id="ui">
+  <div id="touch"></div>
+  <svg id="cross" viewBox="0 0 22 22"><path d="M11 2v18M2 11h18" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M11 2v18M2 11h18" stroke="#1a1418" stroke-width="2" stroke-linecap="round"/></svg>
+  <div id="stickZone"></div>
+  <svg id="joy" viewBox="0 0 200 220" aria-hidden="true">
+    <g fill="none" stroke="rgba(20,16,24,.6)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M74 44 L78 26 Q100 20 122 26 L126 44" />
+      <circle cx="100" cy="128" r="86" fill="rgba(255,190,40,.22)"/>
+      <circle cx="100" cy="132" r="60" stroke-width="5" fill="rgba(230,245,0,.2)"/>
+    </g>
+    <g id="knob" transform="translate(100 132)">
+      <circle r="34" fill="rgba(176,162,196,.9)" stroke="rgba(20,16,24,.75)" stroke-width="6"/>
+      <circle r="12" fill="rgba(90,74,120,.9)"/>
+      <g stroke="rgba(90,74,120,.9)" stroke-width="4" stroke-linecap="round">
+        <line x1="0" y1="-12" x2="0" y2="-20"/><line x1="0" y1="12" x2="0" y2="20"/>
+        <line x1="-12" y1="0" x2="-20" y2="0"/><line x1="12" y1="0" x2="20" y2="0"/>
+      </g>
+    </g>
+  </svg>
+  <button id="jump" class="rbtn" aria-label="Jump">
+    <svg width="44" height="44" viewBox="0 0 44 44"><path d="M22 36 V10 M10 21 L22 9 L34 21" fill="none" stroke="rgba(20,16,24,.75)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button id="zap" class="rbtn" aria-label="Electric run" aria-pressed="false">
+    <svg width="40" height="44" viewBox="0 0 40 44"><path d="M24 3 L7 25 H19 L14 41 L33 17 H21 Z" fill="#ffe94a" stroke="#141018" stroke-width="4" stroke-linejoin="round"/></svg>
+  </button>
+  <div id="tools">
+    <button class="tbtn p" id="tCrate" aria-label="Drop a box at the crosshair">📦</button>
+    <button class="tbtn p" id="tTree" aria-label="Drop a bouncy tree at the crosshair">🌳</button>
+    <button class="tbtn p" id="tCall" aria-label="Call Stick Head to the crosshair">📍</button>
+    <button class="tbtn p" id="tClear" aria-label="Clear boxes and trees">🧹</button>
+    <button class="tbtn" id="tMusic" aria-label="Music on/off">♪</button>
+    <button class="tbtn" id="tExit" aria-label="Exit">✕</button>
+  </div>
+  <button id="drop" disabled>Aim at the floor…</button>
+  <div id="hint"></div>
+  <div id="toast"></div>
+  <div id="title">
+    <div class="big">STICK HEAD</div>
+    <div><span class="ar">AR</span></div>
+    <div class="njz">a <b>Neo Joy Z</b> game</div>
+    <button id="start">Start camera</button>
+    <div class="note" id="note">Checking your phone…</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const COL = {
+  bg: 0x8FD0EE, head: 0xFDBA1C, face: 0xE4F400, torso: 0xF3C23C, pants: 0x2A2630,
+  red: 0xE8502E, lav: 0xB0A2C4, lavDark: 0x7E6C9C, sticker: 0x5A4A78, ink: 0x161216
+};
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// ---------------- renderer (transparent: the camera shows through) ----------------
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000, 0);
+renderer.xr.enabled = true;
+document.body.insertBefore(renderer.domElement, $('ui'));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.01, 60);
+camera.position.set(0, 1.35, 0);
+scene.add(camera);
+scene.add(new THREE.AmbientLight(0xffffff, 1.15));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(1.2, 3, 0.8);
+scene.add(sun);
+
+// toon shading + ink outlines (inverted hull, so it also works inside a WebXR session)
+const ramp = new THREE.DataTexture(new Uint8Array([120, 195, 255]), 3, 1, THREE.RedFormat);
+ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.needsUpdate = true;
+const INK = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  vertexShader: `void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vec3 n = normalize(normalMatrix * normal);
+    mv.xyz += n * 0.0042 * (-mv.z); gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `void main(){ gl_FragColor = vec4(0.07, 0.05, 0.07, 1.0); }`
+});
+const matCache = {};
+function toon(color) {
+  if (!matCache[color]) matCache[color] = new THREE.MeshToonMaterial({ color, gradientMap: ramp });
+  return matCache[color];
+}
+function mesh(g, c, outline = true) {
+  const m = new THREE.Mesh(g, toon(c));
+  if (outline) m.add(new THREE.Mesh(g, INK));
+  return m;
+}
+
+// ---------------- the character (identical to the Garden State build) ----------------
+function buildCharacter() {
+  const root = new THREE.Group();     // origin at feet, +Y up, +Z forward
+  // flip pivot sits at the middle of the character (stick-cap top is at ~3.2) so flips
+  // and upside-down stick-spins rotate around the right point
+  const FLIP_C = 1.6;
+  const flip = new THREE.Group(); flip.position.y = FLIP_C; flip.rotation.order = 'YXZ'; root.add(flip);
+  const offs = new THREE.Group(); offs.position.y = -FLIP_C; flip.add(offs);
+  const body = new THREE.Group(); offs.add(body);
+  const parts = { flip, FLIP_C };
+
+  // legs + boots (legs 50% longer than v1)
+  const LIFT = 0.25; // everything above the hips moves up by the extra leg length
+  const bootGeo = new RoundedBoxGeometry(0.3, 0.22, 0.4, 4, 0.09);
+  for (const s of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(0.16 * s, 0.62 + LIFT, 0); body.add(hip);
+    const leg = mesh(new THREE.CylinderGeometry(0.095, 0.1, 0.69, 14), COL.pants); leg.position.y = -0.345; hip.add(leg);
+    const boot = mesh(bootGeo, COL.red); boot.position.set(0.01 * s, -0.75, 0.05); hip.add(boot);
+    // boot shaft: covers the ankle
+    const shaftB = mesh(new THREE.CylinderGeometry(0.122, 0.135, 0.2, 18), COL.red); shaftB.position.set(0.005 * s, -0.6, 0.0); hip.add(shaftB);
+    parts[s < 0 ? 'hipL' : 'hipR'] = hip;
+  }
+  // pants (big round hips)
+  const pants = mesh(new THREE.SphereGeometry(1, 28, 18), COL.pants);
+  pants.scale.set(0.37, 0.29, 0.3); pants.position.y = 0.74 + LIFT; body.add(pants);
+  // torso
+  const torso = mesh(new THREE.CylinderGeometry(0.17, 0.3, 0.32, 24), COL.torso);
+  torso.position.y = 0.99 + LIFT; body.add(torso);
+  // match the torso's depth/width ratio to the pants (0.30/0.37) so the waistline sits level all the way round
+  const TORSO_Z = 0.3 / 0.37; torso.scale.z = TORSO_Z; parts.torsoZ = TORSO_Z;
+  const neck = mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.16, 16), COL.torso);
+  neck.position.y = 1.18 + LIFT; body.add(neck);
+  // arms + mittens (arms 50% longer than v1)
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(0.24 * s, 1.08 + LIFT, 0); sh.rotation.z = 0.38 * s; body.add(sh);
+    const arm = mesh(new THREE.CapsuleGeometry(0.07, 0.38, 4, 10), COL.torso); arm.position.y = -0.24; sh.add(arm);
+    const mitt = mesh(new THREE.SphereGeometry(0.13, 18, 14), COL.red); mitt.scale.set(1, 1.08, 0.9); mitt.position.y = -0.54; sh.add(mitt);
+    const thumb = mesh(new THREE.SphereGeometry(0.055, 12, 10), COL.red); thumb.position.set(-0.09 * s, -0.49, 0.07); sh.add(thumb);
+    // glove cuff: covers the wrist
+    const cuff = mesh(new THREE.CylinderGeometry(0.088, 0.105, 0.15, 16), COL.red); cuff.position.y = -0.42; sh.add(cuff);
+    parts[s < 0 ? 'shL' : 'shR'] = sh;
+  }
+
+  // head
+  const head = new THREE.Group(); head.position.y = 1.8 + LIFT; body.add(head); parts.head = head;
+  const HR = 0.62;
+  head.add(mesh(new THREE.SphereGeometry(HR, 40, 28), COL.head));
+  // face: black rim + yellow-green disc (spherical caps facing +Z)
+  const rim = mesh(new THREE.SphereGeometry(HR + 0.006, 40, 16, 0, Math.PI * 2, 0, 0.98).rotateX(Math.PI / 2), COL.ink, false);
+  const face = mesh(new THREE.SphereGeometry(HR + 0.012, 40, 16, 0, Math.PI * 2, 0, 0.9).rotateX(Math.PI / 2), COL.face, false);
+  head.add(rim, face);
+  const Z = new THREE.Vector3(0, 0, 1);
+  const onFace = (m, x, y, z, off) => {
+    const d = new THREE.Vector3(x, y, z).normalize();
+    m.position.copy(d).multiplyScalar(HR + off);
+    m.quaternion.setFromUnitVectors(Z, d); head.add(m); return m;
+  };
+  parts.eyes = [];
+  for (const s of [-1, 1]) {
+    const eye = mesh(new THREE.SphereGeometry(1, 12, 10), COL.ink, false);
+    eye.scale.set(0.034, 0.048, 0.02); onFace(eye, 0.11 * s, 0.25, 1, 0.012);
+    parts.eyes.push(eye);
+  }
+  const nose = mesh(new THREE.SphereGeometry(1, 18, 14), COL.red);
+  nose.scale.set(0.085, 0.12, 0.09); onFace(nose, 0, 0.0, 1, 0.04);
+  const mouth = mesh(new THREE.TorusGeometry(0.115, 0.014, 6, 20, Math.PI).rotateZ(Math.PI), COL.ink, false);
+  onFace(mouth, 0, -0.27, 1, 0.022);
+
+  // collar + analog stick
+  const collar = mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.16, 24), COL.head);
+  collar.position.y = HR - 0.04; head.add(collar);
+  const collarLine = mesh(new THREE.TorusGeometry(0.205, 0.012, 6, 28), COL.ink, false);
+  collarLine.rotation.x = Math.PI / 2; collarLine.position.y = HR + 0.04; head.add(collarLine);
+  const stick = new THREE.Group(); stick.position.y = HR + 0.05; head.add(stick); parts.stick = stick;
+  const spinG = new THREE.Group(); stick.add(spinG); parts.spin = spinG;
+  const shaft = mesh(new THREE.CylinderGeometry(0.085, 0.09, 0.3, 16), COL.lav); shaft.position.y = 0.15; spinG.add(shaft);
+  const under = mesh(new THREE.CylinderGeometry(0.44, 0.42, 0.05, 36), COL.lavDark); under.position.y = 0.3; spinG.add(under);
+  const dome = mesh(new THREE.SphereGeometry(0.44, 36, 12, 0, Math.PI * 2, 0, Math.PI / 2), COL.lav);
+  dome.scale.y = 0.36; dome.position.y = 0.32; spinG.add(dome);
+  const topY = 0.32 + 0.44 * 0.36;
+  const stk = mesh(new THREE.SphereGeometry(1, 20, 10), COL.sticker, false);
+  stk.scale.set(0.12, 0.035, 0.12); stk.position.y = topY - 0.01; spinG.add(stk);
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + 0.4;
+    const nub = mesh(new THREE.SphereGeometry(1, 10, 8), COL.sticker, false);
+    nub.scale.set(0.035, 0.025, 0.035); nub.position.set(Math.cos(a) * 0.17, topY - 0.025, Math.sin(a) * 0.17); spinG.add(nub);
+  }
+  parts.torso = torso; parts.headY = head.position.y; parts.shY = 1.08 + LIFT;
+  return { root, body, parts };
+}
+
+
+// The whole game lives in "game units" exactly like the original, inside one group that is
+// scaled down to real-world metres and pinned to your floor.
+const arRoot = new THREE.Group(); arRoot.visible = false; scene.add(arRoot);
+let K = 0.14;                       // metres per game unit → Stick Head ≈ 22 cm tall
+arRoot.scale.setScalar(K);
+const hero = buildCharacter();
+const CHAR_SCALE = 0.5;
+hero.root.scale.setScalar(CHAR_SCALE);
+arRoot.add(hero.root);
+const HERO_H = 3.35 * CHAR_SCALE;   // feet to stick-cap, in game units
+
+const shadowMat = () => new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false });
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.42, 28), shadowMat());
+shadow.rotation.x = -Math.PI / 2; arRoot.add(shadow);
+
+// reticle on the real floor (metres, world space)
+const reticle = new THREE.Group(); reticle.matrixAutoUpdate = false; reticle.visible = false; scene.add(reticle);
+{
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.065, 36).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }));
+  const inner = new THREE.Mesh(new THREE.RingGeometry(0.065, 0.075, 36).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x1a1418, transparent: true, opacity: 0.8, depthWrite: false }));
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.012, 16).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0xFDBA1C, depthWrite: false }));
+  reticle.add(ring, inner, dot);
+}
+const reticlePos = new THREE.Vector3();
+let reticleOK = false;
+
+// ---------------- props: boxes to wall-run up, trees to bounce on ----------------
+const props = [];
+const crateGeo = new RoundedBoxGeometry(2.4, 2.6, 2.4, 3, 0.12);
+const tapeGeo = new THREE.BoxGeometry(0.5, 0.03, 2.42);
+function addCrate(x, z) {
+  let base = 0;                                       // stack on a box that's already there
+  for (const c of props) if (c.kind === 'solid' && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) base = Math.max(base, c.top);
+  const g = new THREE.Group(); g.position.set(x, base + 1.3, z);
+  g.add(mesh(crateGeo, 0xC9955B));
+  const tape = new THREE.Mesh(tapeGeo, toon(0xE8C27A)); tape.position.y = 1.3; g.add(tape);
+  arRoot.add(g);
+  if (base === 0) { const s = new THREE.Mesh(new THREE.PlaneGeometry(3, 3).rotateX(-Math.PI / 2), shadowMat()); s.material.opacity = 0.22; s.position.set(x, 0.02, z); arRoot.add(s); g.userData.shadow = s; }
+  const h = 1.2, poly = [[x - h, z - h], [x + h, z - h], [x + h, z + h], [x - h, z + h]];
+  props.push({ kind: 'solid', g, poly, x0: x - h, x1: x + h, z0: z - h, z1: z + h, base, top: base + 2.6 });
+}
+const trunkGeo = new THREE.CylinderGeometry(0.28, 0.4, 2.4, 14);
+const canopyGeo = new THREE.SphereGeometry(1, 22, 16);
+function addTree(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z);
+  const trunk = mesh(trunkGeo, 0x8A5A44); trunk.position.y = 1.2; g.add(trunk);
+  const can = mesh(canopyGeo, 0x6DBE5A); can.scale.set(1.7, 1.45, 1.7); can.position.y = 3.3; g.add(can);
+  const c2 = mesh(canopyGeo, 0x9be07a); c2.scale.set(0.9, 0.75, 0.9); c2.position.set(0.7, 4.1, 0.4); g.add(c2);
+  const s = new THREE.Mesh(new THREE.CircleGeometry(1.7, 24).rotateX(-Math.PI / 2), shadowMat()); s.material.opacity = 0.2; s.position.y = 0.02; g.add(s);
+  arRoot.add(g);
+  props.push({ kind: 'tree', g, cx: x, cz: z, tr: 0.4, r: 1.7, cy: 3.3, ry: 1.45, cool: 0 });
+}
+function clearProps() {
+  for (const p of props) { arRoot.remove(p.g); if (p.g.userData.shadow) arRoot.remove(p.g.userData.shadow); }
+  props.length = 0;
+}
+
+function pointInPoly(x, z, poly) {
+  let ins = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i], [xj, zj] = poly[j];
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) ins = !ins;
+  }
+  return ins;
+}
+function closestOnPoly(x, z, poly) {
+  let best = Infinity, bx = x, bz = z;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [ax, az] = poly[j], [cx, cz] = poly[i], dx = cx - ax, dz = cz - az, l2 = dx * dx + dz * dz;
+    const t = l2 ? clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1) : 0, px = ax + t * dx, pz = az + t * dz, d = Math.hypot(x - px, z - pz);
+    if (d < best) { best = d; bx = px; bz = pz; }
+  }
+  return [bx, bz, best];
+}
+const STEP = 0.5;
+function solidAt(x, z, h, r) {
+  for (const c of props) {
+    if (c.kind !== 'solid' || c.top <= h + STEP || c.base > h + 1.6) continue;
+    if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true;
+  }
+  return false;
+}
+function floorAt(x, z, h) {
+  let f = 0;
+  for (const c of props) if (c.kind === 'solid' && c.top > f && c.top <= h + STEP && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) f = c.top;
+  return f;
+}
+
+// ---------------- input (same controls as the Garden State build) ----------------
+const input = { jump: false };
+const keys = new Set();
+let jumpHeld = false;
+addEventListener('keydown', e => { keys.add(e.code); if (e.code === 'Space') { if (!e.repeat) input.jump = true; jumpHeld = true; e.preventDefault(); } });
+addEventListener('keyup', e => { keys.delete(e.code); if (e.code === 'Space') jumpHeld = false; });
+
+const knob = $('knob'), joySvg = $('joy'), zone = $('stickZone');
+let stickId = null; const touchVec = { x: 0, y: 0 };
+const KNOB_MAX = 48;
+function setStickFromPointer(e) {
+  const r = joySvg.getBoundingClientRect(), s = r.width / 200;
+  let dx = (e.clientX - (r.left + r.width / 2)) / s, dy = (e.clientY - (r.top + r.height * 132 / 220)) / s;
+  const len = Math.hypot(dx, dy);
+  if (len > KNOB_MAX) { dx *= KNOB_MAX / len; dy *= KNOB_MAX / len; }
+  touchVec.x = dx / KNOB_MAX; touchVec.y = -dy / KNOB_MAX;
+}
+zone.addEventListener('pointerdown', e => { stickId = e.pointerId; zone.setPointerCapture(e.pointerId); setStickFromPointer(e); e.preventDefault(); e.stopPropagation(); });
+zone.addEventListener('pointermove', e => { if (e.pointerId === stickId) setStickFromPointer(e); });
+const endStick = e => { if (e.pointerId === stickId) { stickId = null; touchVec.x = touchVec.y = 0; } };
+zone.addEventListener('pointerup', endStick); zone.addEventListener('pointercancel', endStick);
+
+const jumpBtn = $('jump');
+jumpBtn.addEventListener('pointerdown', e => { input.jump = true; jumpHeld = true; jumpBtn.setPointerCapture(e.pointerId); jumpBtn.classList.add('on'); e.preventDefault(); e.stopPropagation(); });
+const jumpUp = () => { jumpHeld = false; jumpBtn.classList.remove('on'); };
+jumpBtn.addEventListener('pointerup', jumpUp); jumpBtn.addEventListener('pointercancel', jumpUp);
+const zapBtn = $('zap'); let zapOn = false;
+zapBtn.addEventListener('pointerdown', e => { zapOn = !zapOn; zapBtn.classList.toggle('on', zapOn); zapBtn.setAttribute('aria-pressed', zapOn); e.preventDefault(); e.stopPropagation(); });
+// in a WebXR session, taps on our buttons shouldn't also count as screen "selects"
+for (const el of document.querySelectorAll('button, #stickZone')) el.addEventListener('beforexrselect', e => e.preventDefault());
+
+// ---------------- hint / toast ----------------
+let hintTimer = 0, toastTimer = 0;
+function hint(msg, ms = 6000) { const h = $('hint'); h.textContent = msg; h.style.opacity = 1; clearTimeout(hintTimer); hintTimer = setTimeout(() => h.style.opacity = 0, ms); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.style.opacity = 0, 1200); }
+
+// ---------------- sparks (electric run) + leaves (tree bounce) ----------------
+const sparkTex = (() => {
+  const mk = draw => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+    x.lineJoin = x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const bolt = x => { const p = [[22,4],[38,26],[28,28],[44,58],[18,32],[28,30]];
+    x.beginPath(); p.forEach(([a,b],i)=> i ? x.lineTo(a,b) : x.moveTo(a,b)); x.closePath();
+    x.lineWidth = 7; x.strokeStyle = '#141018'; x.stroke(); x.fillStyle = '#fff'; x.fill(); };
+  const star = x => { x.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, r = i % 2 ? 7 : 28; x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); } x.closePath();
+    x.lineWidth = 6; x.strokeStyle = '#141018'; x.stroke(); x.fillStyle = '#fff'; x.fill(); };
+  const zig = x => { x.beginPath(); x.moveTo(6, 34); [[18,20],[28,40],[40,18],[50,36],[58,26]].forEach(([a,b]) => x.lineTo(a,b));
+    x.lineWidth = 11; x.strokeStyle = '#141018'; x.stroke(); x.lineWidth = 5; x.strokeStyle = '#fff'; x.stroke(); };
+  return [mk(bolt), mk(star), mk(zig)];
+})();
+const leafTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  x.translate(32, 32); x.rotate(0.6); x.beginPath(); x.ellipse(0, 0, 26, 13, 0, 0, 7);
+  x.fillStyle = '#fff'; x.fill(); x.lineWidth = 6; x.strokeStyle = '#141018'; x.stroke();
+  x.beginPath(); x.moveTo(-22, 0); x.lineTo(22, 0); x.lineWidth = 4; x.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const SPARK_COLS = [0x7ff6ff, 0xfff35c, 0xffffff, 0xa8ffef];
+const sparks = [];
+function emitSpark(pos, upV, big) {
+  const m = new THREE.SpriteMaterial({ map: sparkTex[(Math.random() * 3) | 0], color: SPARK_COLS[(Math.random() * 4) | 0], transparent: true, depthWrite: false });
+  const s = new THREE.Sprite(m); s.position.copy(pos);
+  const size = (big ? 0.42 : 0.26) * (0.7 + Math.random() * 0.6); s.scale.setScalar(size);
+  const vel = new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(1.4).addScaledVector(upV, 0.9 + Math.random() * 1.2);
+  arRoot.add(s);
+  sparks.push({ s, vel, life: 0, max: 0.35 + Math.random() * 0.4, size, spin: (Math.random() - .5) * 14 });
+}
+function updateSparks(dt) {
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const p = sparks[i]; p.life += dt; const k = p.life / p.max;
+    if (k >= 1) { arRoot.remove(p.s); p.s.material.dispose(); sparks.splice(i, 1); continue; }
+    p.s.position.addScaledVector(p.vel, dt); p.vel.multiplyScalar(1 - 3 * dt);
+    p.s.material.rotation += p.spin * dt;
+    const flick = Math.random() < 0.15 ? 0.4 : 1;
+    p.s.scale.setScalar(p.size * (1 - k * 0.7) * flick);
+    p.s.material.opacity = 1 - k * k;
+  }
+}
+
+// ---------------- player state (same tuning as the Garden State build) ----------------
+const up = new THREE.Vector3(0, 1, 0);
+const facing = new THREE.Vector3(0, 0, 1), camFwd = new THREE.Vector3(0, 0, -1);
+const pl = new THREE.Vector3();
+let height = 0, vy = 0, grounded = true, runPhase = 0, runAmt = 0, airT = 0;
+const SPEED = 5, ZAP_SPEED = 9.5, GRAV = 22, JUMP_V = 7.6, FLIP_V = JUMP_V * 1.3, FLIP_DUR = 0.62, RAD = 0.32, TREE_V = 14;
+let sparkAcc = 0, simT = 0, blinkAt = 1500, blinkStart = -1000;
+let usedFlip = false, flipT = -1, idleTime = 0, dancing = false;
+const BD_START = 7;
+let sitting = true, sitAmt = 1, gliding = false, glideAmt = 0, spinV = 0;
+let wallRun = false, wallAmt = 0; const wall = { c: null, nx: 0, nz: 1 };
+const kick = new THREE.Vector3();
+const qG = new THREE.Quaternion(), qW = new THREE.Quaternion(), WY = new THREE.Vector3(0, 1, 0);
+const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), basis = new THREE.Matrix4();
+const stickTarget = new THREE.Quaternion();
+const ortho = v => { v.y = 0; return v.normalize(); };
+const signedAngle = (a, b) => Math.atan2(up.dot(tmpV2.copy(a).cross(b)), a.dot(b));
+const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const canStand = (x, z) => !solidAt(x, z, height, RAD);
+function tryMove(dx, dz) {
+  const x = pl.x, z = pl.z;
+  if (canStand(x + dx, z + dz)) { pl.x += dx; pl.z += dz; return true; }
+  if (Math.abs(dx) > 1e-5 && canStand(x + dx, z)) { pl.x += dx; return false; }
+  if (Math.abs(dz) > 1e-5 && canStand(x, z + dz)) { pl.z += dz; return false; }
+  return false;
+}
+function findWall(dir) {
+  const px = pl.x + dir.x * (RAD + 0.2), pz = pl.z + dir.z * (RAD + 0.2);
+  for (const c of props) {
+    if (c.kind !== 'solid' || c.top - height < 0.8 || c.base > height + 1.6) continue;
+    if (!(px > c.x0 - RAD && px < c.x1 + RAD && pz > c.z0 - RAD && pz < c.z1 + RAD)) continue;
+    const [cx, cz, d] = closestOnPoly(pl.x, pl.z, c.poly);
+    let nx = pl.x - cx, nz = pl.z - cz;
+    if (d < 1e-4 || pointInPoly(pl.x, pl.z, c.poly)) { nx = -dir.x; nz = -dir.z; } else { nx /= d; nz /= d; }
+    if (-(dir.x * nx + dir.z * nz) < 0.45) continue;
+    return { c, nx, nz };
+  }
+  return null;
+}
+function startWallRun(h) { wallRun = true; wall.c = h.c; wall.nx = h.nx; wall.nz = h.nz; grounded = false; vy = 0; flipT = -1; kick.set(0, 0, 0); }
+function treeBounce(c) {
+  vy = TREE_V; grounded = false; usedFlip = false; flipT = -1; c.cool = 0.25;
+  for (let i = 0; i < 14; i++) {
+    const m = new THREE.SpriteMaterial({ map: leafTex, color: [0x6DBE5A, 0x9be07a, 0xc8f07a, 0x4f9a46][i % 4], transparent: true, depthWrite: false });
+    const s = new THREE.Sprite(m); s.position.set(pl.x + (Math.random() - .5) * 1.4, height + 0.3, pl.z + (Math.random() - .5) * 1.4);
+    const size = 0.3 + Math.random() * 0.25; s.scale.setScalar(size); arRoot.add(s);
+    const vel = new THREE.Vector3((Math.random() - .5) * 5, 1 + Math.random() * 3, (Math.random() - .5) * 5);
+    sparks.push({ s, vel, life: 0, max: 0.6 + Math.random() * 0.5, size, spin: (Math.random() - .5) * 10 });
+  }
+}
+
+// ---------------- where the phone is looking ----------------
+const viewPos = new THREE.Vector3(), viewFwd = new THREE.Vector3(), viewUp = new THREE.Vector3();
+function readView() {
+  const cam = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
+  const e = cam.matrixWorld.elements;
+  viewPos.set(e[12], e[13], e[14]);
+  viewFwd.set(-e[8], -e[9], -e[10]).normalize();
+  viewUp.set(e[4], e[5], e[6]).normalize();
+  // stick "up" = away from you along the floor, even when the phone points straight down
+  const f = tmpV.set(viewFwd.x + viewUp.x, 0, viewFwd.z + viewUp.z);
+  if (f.lengthSq() > 1e-6) camFwd.copy(f.normalize());
+}
+const toLocal = w => arRoot.worldToLocal(w.clone());
+
+// ---------------- per-frame game update ----------------
+let phase = 'title';
+function update(dt) {
+  simT += dt * 1000;
+  let kx = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+  let ky = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+  let ix = touchVec.x, iy = touchVec.y;
+  if (kx || ky) { const l = Math.hypot(kx, ky); ix = kx / l; iy = ky / l; }
+  const controls = phase === 'play';
+  if (!controls) { ix = iy = 0; input.jump = false; }
+  let mag = Math.min(1, Math.hypot(ix, iy));
+  knob.setAttribute('transform', `translate(${100 + ix * KNOB_MAX} ${132 - iy * KNOB_MAX})`);
+
+  if (sitting && (mag > 0.1 || input.jump)) { sitting = false; input.jump = false; }
+  sitAmt += ((sitting ? 1 : 0) - sitAmt) * Math.min(1, 6 * dt);
+  mag *= (1 - sitAmt);
+
+  const move = new THREE.Vector3();
+  const right = tmpV.copy(camFwd).cross(up).normalize();
+  move.addScaledVector(right, ix).addScaledVector(camFwd, iy);
+  if (move.lengthSq() > 1e-6) move.normalize();
+
+  const zapping = controls && (zapOn || keys.has('ShiftLeft') || keys.has('ShiftRight'));
+  const zapRun = zapping && mag > 0.08;
+  if (mag > 0.08) {
+    const dist = (zapping ? ZAP_SPEED : SPEED) * (gliding ? 1.15 : 1) * mag * dt;
+    const n = Math.ceil(dist / 0.25);
+    let blocked = false;
+    if (!wallRun) for (let i = 0; i < n; i++) if (!tryMove(move.x * dist / n, move.z * dist / n)) blocked = true;
+    if (blocked && !wallRun && !sitting && mag > 0.3) { const hit = findWall(move); if (hit) startWallRun(hit); }
+    facing.applyAxisAngle(up, signedAngle(facing, move) * Math.min(1, 14 * dt));
+  }
+  ortho(facing);
+
+  // ---- running up walls (boxes) ----
+  if (wallRun) {
+    const c = wall.c, into = -(move.x * wall.nx + move.z * wall.nz);
+    facing.set(-wall.nx, 0, -wall.nz);
+    if (input.jump) {
+      wallRun = false; vy = JUMP_V * 1.15; kick.set(wall.nx, 0, wall.nz).multiplyScalar(7);
+      facing.set(wall.nx, 0, wall.nz); usedFlip = false; input.jump = false;
+    } else if (mag < 0.2 || into < 0.25) {
+      wallRun = false; vy = 1.5; kick.set(wall.nx, 0, wall.nz).multiplyScalar(3);
+    } else {
+      height += (zapping ? ZAP_SPEED : SPEED) * 1.1 * mag * dt; vy = 0; airT = 0;
+      if (height >= c.top - 0.12) { wallRun = false; height = c.top + 0.05; vy = 6.5; kick.set(-wall.nx, 0, -wall.nz).multiplyScalar(4.5); usedFlip = false; }
+    }
+  }
+  if (kick.lengthSq() > 0.0004) {
+    const k = kick.clone().multiplyScalar(dt), n = Math.ceil(k.length() / 0.25);
+    for (let i = 0; i < n; i++) tryMove(k.x / n, k.z / n);
+    kick.multiplyScalar(Math.max(0, 1 - 2.2 * dt));
+  } else kick.set(0, 0, 0);
+
+  const floor = floorAt(pl.x, pl.z, height);
+  if (wallRun) input.jump = false;
+  if (input.jump) {
+    if (grounded) { vy = JUMP_V; grounded = false; usedFlip = false; }
+    else if (!usedFlip) { vy = FLIP_V; usedFlip = true; flipT = 0; }
+  }
+  input.jump = false;
+  if (grounded && !wallRun) { if (height - floor > 0.6) { grounded = false; vy = 0; } else height = floor; }
+
+  // ---- trees are trampolines ----
+  if (!wallRun) for (const c of props) {
+    if (c.kind !== 'tree') continue;
+    c.cool -= dt; if (c.cool > 0) continue;
+    const dh = Math.hypot(pl.x - c.cx, pl.z - c.cz);
+    if (grounded) { if (dh < c.tr + RAD + 0.2 && mag > 0.1) { vy = JUMP_V * 1.2; grounded = false; usedFlip = false; } }
+    else { const dy = (height + 0.5 - c.cy) / c.ry, q = (dh / c.r) ** 2 + dy * dy; if (q < 1.2 && vy < 4) { treeBounce(c); break; } }
+  }
+  gliding = !grounded && !wallRun && controls && jumpHeld && vy < 0 && flipT < 0;
+  if (!grounded && !wallRun) {
+    if (gliding) vy = Math.max(vy - GRAV * 0.12 * dt, -1.5); else vy -= GRAV * dt;
+    height += vy * dt; airT += dt;
+    if (height <= floor && vy <= 0) { height = floor; vy = 0; grounded = true; airT = 0; usedFlip = false; flipT = -1; }
+  }
+  glideAmt += ((gliding ? 1 : 0) - glideAmt) * Math.min(1, 10 * dt);
+
+  if (controls && grounded && !wallRun && !sitting && mag < 0.05) idleTime += dt; else idleTime = 0;
+  dancing = idleTime > BD_START;
+
+  // place character
+  const pos = new THREE.Vector3(pl.x, height, pl.z);
+  hero.root.position.copy(pos);
+  basis.makeBasis(new THREE.Vector3().copy(up).cross(facing).normalize(), up, facing);
+  qG.setFromRotationMatrix(basis);
+  wallAmt += ((wallRun ? 1 : 0) - wallAmt) * Math.min(1, 12 * dt);
+  if (wallAmt > 0.001) {
+    const n = tmpV.set(wall.nx, 0, wall.nz);
+    basis.makeBasis(tmpV2.copy(n).cross(WY).normalize(), n, WY); qW.setFromRotationMatrix(basis);
+    qG.slerp(qW, wallAmt);
+    hero.root.position.addScaledVector(n, -0.28 * wallAmt);
+  }
+  hero.root.quaternion.copy(qG);
+  shadow.position.set(pl.x, floor + 0.03, pl.z);
+  const ss = 1 / (1 + (height - floor) * 0.5); shadow.scale.setScalar(ss); shadow.material.opacity = 0.32 * ss;
+
+  // ---------- animation (unchanged from the Garden State build) ----------
+  const gnd = grounded || wallRun;
+  const P = hero.parts, F = P.flip;
+  runAmt += ((gnd ? mag : 0) - runAmt) * Math.min(1, 10 * dt);
+  runPhase += dt * (6 + 9 * mag) * (gnd ? 1 : 0) * (zapRun ? 1.6 : 1);
+  const sw = Math.sin(runPhase), zr = zapRun ? 1 : 0, t = simT / 1000;
+  const id = gnd ? (1 - runAmt) * (1 - sitAmt) : 0;
+  const sp = t * Math.PI * 2 / 1.4, sway = Math.sin(sp), bounce = Math.abs(Math.cos(sp));
+  const br = Math.sin(t * Math.PI * 2 / 3.2) * (0.6 + 0.4 * (gnd ? 1 - runAmt : 0));
+  P.torso.scale.set(1 + 0.07 * br, 1 + 0.05 * br, (1 + 0.08 * br) * P.torsoZ);
+  P.head.position.y = P.headY + 0.028 * br;
+  P.shL.position.y = P.shR.position.y = P.shY + 0.022 * br;
+  P.hipL.rotation.z = P.hipR.rotation.z = 0;
+  let flipX = null, flipY = null;
+
+  if (dancing) {
+    const ph = (idleTime - BD_START) % 7.8;
+    hero.body.position.y = 0; hero.body.rotation.set(0, 0, 0);
+    if (ph < 2.4) {
+      const w = ph * Math.PI * 2 / 0.8, s1 = Math.sin(w);
+      P.hipL.rotation.x = -0.7 * Math.max(0, s1); P.hipR.rotation.x = -0.7 * Math.max(0, -s1);
+      P.hipL.rotation.z = 0.25 * Math.max(0, s1); P.hipR.rotation.z = -0.25 * Math.max(0, -s1);
+      P.shL.rotation.x = -1.3 + 0.6 * s1; P.shR.rotation.x = -1.3 - 0.6 * s1;
+      P.shL.rotation.z = -0.6; P.shR.rotation.z = 0.6;
+      hero.body.position.y = 0.06 * Math.abs(Math.cos(w));
+      flipX = 0; flipY = 0.45 * s1;
+    } else if (ph < 2.8) {
+      const k = ease((ph - 2.4) / 0.4);
+      flipX = Math.PI * k; flipY = 0;
+      P.hipL.rotation.z = -0.6 * k; P.hipR.rotation.z = 0.6 * k;
+      P.shL.rotation.z = -0.38 - 1.0 * k; P.shR.rotation.z = 0.38 + 1.0 * k; P.shL.rotation.x = P.shR.rotation.x = 0;
+      P.hipL.rotation.x = P.hipR.rotation.x = 0;
+    } else if (ph < 6.0) {
+      const spin = (ph - 2.8) * (14 * Math.PI / 3.2);
+      flipX = Math.PI; flipY = spin;
+      P.hipL.rotation.z = -0.75 - 0.25 * Math.sin(spin * 0.5); P.hipR.rotation.z = 0.75 + 0.25 * Math.sin(spin * 0.5);
+      P.hipL.rotation.x = 0.45 * Math.sin(spin * 0.5); P.hipR.rotation.x = -0.45 * Math.sin(spin * 0.5);
+      P.shL.rotation.z = -1.5; P.shR.rotation.z = 1.5; P.shL.rotation.x = P.shR.rotation.x = 0;
+    } else if (ph < 7.4) {
+      flipX = Math.PI - 0.3; flipY = 0;
+      P.hipL.rotation.x = -1.3; P.hipR.rotation.z = 0.95; P.hipR.rotation.x = 0.2;
+      P.shL.rotation.z = -2.2; P.shR.rotation.z = 0.9; P.shL.rotation.x = 0; P.shR.rotation.x = 0.6;
+    } else {
+      const k = ease((ph - 7.4) / 0.4);
+      flipX = Math.PI - 0.3 + (Math.PI + 0.3) * k; flipY = 0;
+      P.hipL.rotation.x = -1.3 * (1 - k); P.hipR.rotation.z = 0.95 * (1 - k);
+      P.shL.rotation.z = -0.38 - 1.8 * (1 - k); P.shR.rotation.z = 0.38 + 0.5 * (1 - k);
+      P.shL.rotation.x = 0; P.shR.rotation.x = 0;
+    }
+  } else if (gnd) {
+    const legAmp = (0.85 + 0.25 * zr) * runAmt;
+    P.hipL.rotation.x = sw * legAmp - 0.35 * id * Math.max(0, -sway);
+    P.hipR.rotation.x = -sw * legAmp - 0.35 * id * Math.max(0, sway);
+    if (zr) { P.shL.rotation.x = 1.0 + sw * 0.25; P.shR.rotation.x = 1.0 - sw * 0.25; }
+    else { P.shL.rotation.x = -sw * 0.9 * runAmt + 0.4 * id * Math.sin(sp + 1); P.shR.rotation.x = sw * 0.9 * runAmt - 0.4 * id * Math.sin(sp + 1); }
+    const flap = 0.1 * runAmt + 0.18 * id * bounce;
+    P.shL.rotation.z = -0.38 - flap; P.shR.rotation.z = 0.38 + flap;
+    hero.body.position.y = Math.abs(sw) * 0.09 * runAmt + 0.04 * id * bounce;
+    hero.body.rotation.x = (0.12 + 0.2 * zr) * runAmt;
+    hero.body.rotation.z = 0.09 * id * sway;
+    if (sitAmt > 0.001) {
+      const s = sitAmt;
+      P.hipL.rotation.x = lerp(P.hipL.rotation.x, -1.5, s); P.hipR.rotation.x = lerp(P.hipR.rotation.x, -1.42, s);
+      P.hipL.rotation.z = lerp(0, -0.12, s); P.hipR.rotation.z = lerp(0, 0.12, s);
+      P.shL.rotation.x = lerp(P.shL.rotation.x, 0.45, s); P.shR.rotation.x = lerp(P.shR.rotation.x, 0.45, s);
+      P.shL.rotation.z = lerp(P.shL.rotation.z, -0.62, s); P.shR.rotation.z = lerp(P.shR.rotation.z, 0.62, s);
+      hero.body.position.y = lerp(hero.body.position.y, -0.66, s);
+      hero.body.rotation.x = lerp(hero.body.rotation.x, -0.3, s);
+      hero.body.rotation.z = lerp(hero.body.rotation.z, 0, s);
+    }
+  } else if (flipT >= 0) {
+    flipT += dt;
+    const k = Math.min(1, flipT / FLIP_DUR), tuck = Math.sin(k * Math.PI);
+    flipX = Math.PI * 2 * ease(k); flipY = 0;
+    P.hipL.rotation.x = P.hipR.rotation.x = -1.5 * tuck;
+    P.shL.rotation.x = P.shR.rotation.x = -1.2 * tuck;
+    P.shL.rotation.z = -0.38 - 0.3 * tuck; P.shR.rotation.z = 0.38 + 0.3 * tuck;
+    hero.body.position.y = 0; hero.body.rotation.set(0, 0, 0);
+    if (k >= 1) { flipT = -1; flipX = 0; }
+  } else {
+    const k = Math.min(1, airT * 8), g = glideAmt;
+    P.hipL.rotation.x = lerp(-0.9 * k, 0.35, g); P.hipR.rotation.x = lerp(0.35 * k, 0.5, g);
+    P.shL.rotation.x = lerp(-0.4 * k, 0, g); P.shR.rotation.x = lerp(-0.4 * k, 0, g);
+    P.shL.rotation.z = lerp(-0.38 - 1.6 * k, -1.5, g); P.shR.rotation.z = lerp(0.38 + 1.6 * k, 1.5, g);
+    hero.body.position.y = 0; hero.body.rotation.x = lerp(0.05, 0.35, g); hero.body.rotation.z = Math.sin(t * 3) * 0.08 * g;
+  }
+  if (flipX !== null) { F.rotation.x = flipX; F.rotation.y = flipY; }
+  else { const kk = Math.min(1, 14 * dt); F.rotation.x = wrapPi(F.rotation.x) * (1 - kk); F.rotation.y = wrapPi(F.rotation.y) * (1 - kk); }
+  P.head.rotation.z = dancing ? 0 : Math.sin(runPhase * 0.5) * 0.05 * runAmt - 0.1 * id * Math.sin(sp - 0.5);
+  P.head.rotation.x = dancing ? 0 : -0.05 * id * bounce - 0.12 * sitAmt;
+
+  if (simT > blinkAt) { blinkStart = simT; blinkAt = simT + (Math.random() < 0.2 ? 240 : 1800 + Math.random() * 3600); }
+  const bk = simT - blinkStart < 130 ? Math.sin(Math.PI * (simT - blinkStart) / 130) : 0;
+  P.eyes.forEach(e => e.scale.set(0.034 * (1 + 0.3 * bk), 0.048 * (1 - 0.88 * bk), 0.02));
+
+  if (mag > 0.02) {
+    const local = move.clone().applyQuaternion(tmpQ.copy(hero.root.quaternion).invert());
+    local.applyQuaternion(new THREE.Quaternion().setFromEuler(F.rotation).invert()).applyQuaternion(new THREE.Quaternion().setFromEuler(P.head.rotation).invert());
+    stickTarget.setFromAxisAngle(new THREE.Vector3(local.z, 0, -local.x).normalize(), 0.5 * mag);
+  } else stickTarget.identity();
+  P.stick.quaternion.slerp(stickTarget, Math.min(1, 18 * dt));
+  spinV += ((gliding ? 28 : 0) - spinV) * Math.min(1, 3 * dt);
+  P.spin.rotation.y += spinV * dt;
+
+  if (zapRun) {
+    sparkAcc += dt * (grounded ? 70 : 40);
+    const back = facing.clone().negate();
+    while (sparkAcc >= 1) {
+      sparkAcc -= 1;
+      const foot = Math.random() < 0.5 ? P.hipL : P.hipR;
+      const fp = toLocal(foot.localToWorld(new THREE.Vector3(0, -0.75, 0)));
+      fp.addScaledVector(back, Math.random() * 0.35).addScaledVector(up, 0.05);
+      emitSpark(fp, up, Math.random() < 0.25);
+      if (Math.random() < 0.12) emitSpark(pos.clone().addScaledVector(up, 0.5 + Math.random() * 0.9)
+        .add(new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(0.8)), up, false);
+    }
+  } else sparkAcc = 0;
+  updateSparks(dt);
+}
+
+// ---------------- AR plumbing ----------------
+let mode = null;          // 'xr' (real floor tracking) or 'cam' (camera + tilt)
+let xrSession = null, hitSrc = null;
+const ui = $('ui');
+
+// --- WebXR: real floor tracking (Android Chrome & other WebXR browsers) ---
+async function startXR() {
+  const s = await navigator.xr.requestSession('immersive-ar', {
+    requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: ui } });
+  renderer.xr.setReferenceSpaceType('local');
+  await renderer.xr.setSession(s);
+  xrSession = s; mode = 'xr';
+  hitSrc = await s.requestHitTestSource({ space: await s.requestReferenceSpace('viewer') });
+  s.addEventListener('end', () => { xrSession = null; hitSrc = null; backToTitle(); });
+}
+
+// --- Fallback: back camera behind the 3D scene, phone tilt steers the view ---
+let orient = null, orientSeen = false;
+const zee = new THREE.Vector3(0, 0, 1), q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)), q0 = new THREE.Quaternion(), eul = new THREE.Euler();
+addEventListener('deviceorientation', e => { if (e.alpha != null || e.beta != null) { orient = e; orientSeen = true; } });
+let lookYaw = 0, lookPitch = -0.75;  // used when there's no motion sensor (desktop preview)
+async function startCam() {
+  mode = 'cam';
+  // iOS asks for motion permission, and only from a tap
+  try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); } catch (e) {}
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    const v = $('cam'); v.srcObject = stream; v.style.display = 'block'; await v.play().catch(() => {});
+    document.body.classList.remove('nocam');
+  } catch (e) {
+    document.body.classList.add('nocam');
+    hint('No camera here, so this is a preview. Open it on your phone over https to see your room.', 7000);
+  }
+}
+function updateCamFallback() {
+  if (orientSeen && orient) {
+    const a = THREE.MathUtils.degToRad(orient.alpha || 0), b = THREE.MathUtils.degToRad(orient.beta || 0), g = THREE.MathUtils.degToRad(orient.gamma || 0);
+    const so = THREE.MathUtils.degToRad((screen.orientation && screen.orientation.angle) || window.orientation || 0);
+    eul.set(b, a, -g, 'YXZ');
+    camera.quaternion.setFromEuler(eul).multiply(q1).multiply(q0.setFromAxisAngle(zee, -so));
+  } else {
+    camera.quaternion.setFromEuler(new THREE.Euler(lookPitch, lookYaw, 0, 'YXZ'));
+  }
+  camera.updateMatrixWorld();
+  // "hit test" against an assumed floor 1.35 m below the phone
+  const o = camera.position, d = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  reticleOK = false;
+  if (d.y < -0.08) {
+    const tt = -o.y / d.y;
+    if (tt < 8) { reticlePos.copy(o).addScaledVector(d, tt); reticle.matrix.makeTranslation(reticlePos.x, 0, reticlePos.z); reticleOK = true; }
+  }
+}
+
+// one finger on empty screen (no motion sensor): look around; two fingers anywhere empty: resize Stick Head
+const tp = new Map(); let pinch0 = 0;
+const pdist = () => { const [a, b] = [...tp.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+const touchEl = $('touch');
+touchEl.addEventListener('pointerdown', e => { tp.set(e.pointerId, { x: e.clientX, y: e.clientY }); touchEl.setPointerCapture(e.pointerId); if (tp.size === 2) pinch0 = pdist(); });
+touchEl.addEventListener('pointermove', e => {
+  const p = tp.get(e.pointerId); if (!p) return;
+  if (tp.size === 1 && mode === 'cam' && !orientSeen) { lookYaw -= (e.clientX - p.x) * 0.005; lookPitch = clamp(lookPitch - (e.clientY - p.y) * 0.005, -1.5, 0.4); }
+  p.x = e.clientX; p.y = e.clientY;
+  if (tp.size === 2 && phase === 'play') { const d = pdist(); if (pinch0 > 0 && d > 0) setScale(K * d / pinch0); pinch0 = d; }
+});
+const endT = e => { tp.delete(e.pointerId); pinch0 = tp.size === 2 ? pdist() : 0; };
+touchEl.addEventListener('pointerup', endT); touchEl.addEventListener('pointercancel', endT);
+addEventListener('wheel', e => { if (phase === 'play') setScale(K * Math.exp(-e.deltaY * 0.001)); }, { passive: true });
+
+function heroWorld() { return new THREE.Vector3(pl.x, height, pl.z).multiplyScalar(K).add(arRoot.position); }
+let sizeToastAt = 0;
+function setScale(k) {
+  k = clamp(k, 0.04, 0.6);
+  const hw = heroWorld();
+  K = k; arRoot.scale.setScalar(K);
+  arRoot.position.x = hw.x - pl.x * K; arRoot.position.z = hw.z - pl.z * K;   // floor stays put, he stays where he is
+  if (performance.now() - sizeToastAt > 80) { sizeToastAt = performance.now(); toast(`${Math.round(HERO_H * K * 100)} cm tall`); }
+}
+
+
+// ---------------- music (same track as the other Stick Head games) ----------------
+const bgm = new Audio('../music.mp3'); bgm.loop = true; bgm.volume = 0.5; bgm.preload = 'auto';
+let musicOn = true;
+try { musicOn = localStorage.getItem('stickhead-music') !== 'off'; } catch (e) {}
+const syncMusic = () => $('tMusic').classList.toggle('off', !musicOn);
+syncMusic();
+const playMusic = () => { if (musicOn) bgm.play().catch(() => {}); };
+$('tMusic').addEventListener('click', () => {
+  musicOn = !musicOn; syncMusic();
+  try { localStorage.setItem('stickhead-music', musicOn ? 'on' : 'off'); } catch (e) {}
+  musicOn ? playMusic() : bgm.pause();
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) bgm.pause(); else if (phase !== 'title') playMusic(); });
+
+// ---------------- phases ----------------
+function setPhase(p) { phase = p; document.body.classList.remove('title', 'scan', 'play'); document.body.classList.add(p); }
+function backToTitle() {
+  setPhase('title'); bgm.pause(); arRoot.visible = false; reticle.visible = false; mode = null;
+  const v = $('cam'); if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; } v.style.display = 'none';
+  $('title').classList.remove('hide');
+}
+let xrOK = false;
+(async () => {
+  try { xrOK = !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')); } catch (e) {}
+  const note = $('note');
+  if (!isSecureContext) note.textContent = 'Open this page over https so it can use your camera.';
+  else if (xrOK) note.textContent = 'Your phone supports full AR: Stick Head will stay put on your real floor while you walk around him.';
+  else note.textContent = 'Camera mode: Stick Head appears on your floor and you look around by tilting your phone. For full floor tracking, open this in Chrome on Android.';
+  $('start').textContent = xrOK ? 'Start AR' : 'Start camera';
+})();
+
+$('start').addEventListener('click', async () => {
+  playMusic();
+  try { if (xrOK) await startXR(); else await startCam(); }
+  catch (e) { if (xrOK) { xrOK = false; await startCam(); } else { hint('Couldn\'t start: ' + (e.message || e)); return; } }
+  $('title').classList.add('hide');
+  setPhase('scan');
+  hint(mode === 'xr' ? 'Point your phone at the floor and move it slowly until the ring appears.' : 'Point your phone at the floor in front of you.', 6000);
+});
+
+$('drop').addEventListener('click', () => {
+  if (!reticleOK) return;
+  arRoot.position.copy(reticlePos); arRoot.scale.setScalar(K); arRoot.visible = true;
+  pl.set(0, 0, 0); height = floorAt(0, 0, 50); vy = 0; grounded = true; sitting = true; sitAmt = 1; wallRun = false; kick.set(0, 0, 0);
+  const toMe = new THREE.Vector3(viewPos.x - reticlePos.x, 0, viewPos.z - reticlePos.z);
+  if (toMe.lengthSq() > 1e-6) facing.copy(toMe.normalize());
+  setPhase('play');
+  hint('Stick: run · ⬆ jump (twice = flip, hold = glide) · ⚡ electric run · 📦 boxes to wall-run up · 🌳 bouncy trees · pinch to resize', 9000);
+});
+function reticleLocal() { return reticleOK ? toLocal(reticlePos) : null; }
+$('tCrate').addEventListener('click', () => { const p = reticleLocal(); if (!p) return hint('Aim the crosshair at the floor first.', 2500); if (props.length > 24) return hint('That\'s a lot of boxes! 🧹 clears them.', 2500); addCrate(p.x, p.z); });
+$('tTree').addEventListener('click', () => { const p = reticleLocal(); if (!p) return hint('Aim the crosshair at the floor first.', 2500); addTree(p.x, p.z); });
+$('tCall').addEventListener('click', () => { const p = reticleLocal(); if (!p) return hint('Aim the crosshair at the floor first.', 2500); pl.set(p.x, 0, p.z); height = floorAt(p.x, p.z, 50) + 1.5; grounded = false; vy = 0; wallRun = false; sitting = false; toast('Here!'); });
+$('tClear').addEventListener('click', () => clearProps());
+$('tExit').addEventListener('click', () => { if (xrSession) xrSession.end(); else backToTitle(); });
+
+// ---------------- loop ----------------
+let last = performance.now();
+renderer.setAnimationLoop((time, frame) => {
+  const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (mode === 'xr' && frame && hitSrc) {
+    const res = frame.getHitTestResults(hitSrc);
+    reticleOK = false;
+    if (res.length) {
+      const pose = res[0].getPose(renderer.xr.getReferenceSpace());
+      if (pose) {
+        const m = pose.transform.matrix;
+        if (m[5] > 0.8) { reticle.matrix.fromArray(m); reticlePos.set(m[12], m[13], m[14]); reticleOK = true; }  // only floors/tables, not walls
+      }
+    }
+  } else if (mode === 'cam') updateCamFallback();
+  reticle.visible = reticleOK && phase !== 'title';
+  const db = $('drop'); if (db.disabled === reticleOK) { db.disabled = !reticleOK; db.textContent = reticleOK ? 'Drop Stick Head here' : 'Aim at the floor…'; }
+  if (mode) readView();
+  if (phase === 'play') update(dt);
+  renderer.render(scene, camera);
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.fov = innerWidth < innerHeight ? 62 : 46;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+dispatchEvent(new Event('resize'));
+window.__debug = { pl, keys, touchVec, input, get phase() { return phase; }, get K() { return K; }, props, reticlePos, setLook(y, p) { lookYaw = y; lookPitch = p; }, get height() { return height; }, get wallRun() { return wallRun; } };
+</script>
+</body>
+</html>
