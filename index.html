@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Stick Head — Planet Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#E8502E; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; font-family:'Patrick Hand', 'Comic Sans MS', cursive; }
+  canvas { display:block; }
+  #stickZone { position:fixed; left:0; bottom:0; width:200px; height:215px; z-index:2; border-top-right-radius:60px; }
+  #joy { position:fixed; left:18px; bottom:18px; width:150px; height:165px; pointer-events:none; z-index:3; }
+  #jump { position:fixed; right:22px; bottom:26px; width:92px; height:92px; z-index:4; border-radius:50%;
+    border:5px solid rgba(20,16,24,.55); background:rgba(255,255,255,.08); color:rgba(20,16,24,.65);
+    font:inherit; font-size:24px; display:flex; align-items:center; justify-content:center; padding:0; }
+  #jump.on { background:rgba(255,255,255,.28); }
+  #zap { position:fixed; right:128px; bottom:34px; width:76px; height:76px; z-index:4; border-radius:50%;
+    border:5px solid rgba(20,16,24,.55); background:rgba(255,255,255,.08); padding:0;
+    display:flex; align-items:center; justify-content:center; transition:background .15s, transform .15s; }
+  #zap.on { background:#7ff3ff; border-color:#141018; transform:scale(1.06); box-shadow:0 0 0 4px rgba(255,240,90,.8); }
+  #hint { pointer-events:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:5; color:#1a1418;
+    background:rgba(255,240,220,.85); border:3px solid #1a1418; border-radius:14px; padding:6px 14px;
+    font-size:18px; text-align:center; transition:opacity .8s; max-width:88vw; }
+  #joy, #jump, #zap, #hint { transition: opacity .6s; }
+  body.intro #joy, body.intro #jump, body.intro #zap, body.intro #stickZone, body.intro #hint { opacity:0 !important; pointer-events:none; }
+  #hint { opacity:0; }
+  #tap { position:fixed; left:50%; bottom:9%; transform:translateX(-50%); z-index:6; pointer-events:none;
+    font-size:28px; color:#1a1418; background:rgba(255,240,220,.9); border:4px solid #1a1418; border-radius:18px;
+    padding:6px 22px; transition:opacity .4s; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform:translateX(-50%) scale(1.08); } }
+  #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#fff; font-size:22px; padding:20px; text-align:center; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body class="intro">
+<div id="stickZone"></div>
+<svg id="joy" viewBox="0 0 200 220" aria-hidden="true">
+  <g fill="none" stroke="rgba(20,16,24,.55)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <!-- collar nub on top of head -->
+    <path d="M74 44 L78 26 Q100 20 122 26 L126 44" />
+    <!-- head -->
+    <circle cx="100" cy="128" r="86" fill="rgba(255,190,40,.10)"/>
+    <!-- face -->
+    <circle cx="100" cy="132" r="60" stroke-width="5" fill="rgba(230,245,0,.10)"/>
+  </g>
+  <!-- movable stick cap (top view) -->
+  <g id="knob" transform="translate(100 132)">
+    <circle r="34" fill="rgba(176,162,196,.75)" stroke="rgba(20,16,24,.7)" stroke-width="6"/>
+    <circle r="12" fill="rgba(90,74,120,.85)"/>
+    <g stroke="rgba(90,74,120,.85)" stroke-width="4" stroke-linecap="round">
+      <line x1="0" y1="-12" x2="0" y2="-20"/><line x1="0" y1="12" x2="0" y2="20"/>
+      <line x1="-12" y1="0" x2="-20" y2="0"/><line x1="12" y1="0" x2="20" y2="0"/>
+    </g>
+  </g>
+</svg>
+<button id="jump" aria-label="Jump">
+  <svg width="44" height="44" viewBox="0 0 44 44"><path d="M22 36 V10 M10 21 L22 9 L34 21" fill="none" stroke="rgba(20,16,24,.65)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+<button id="zap" aria-label="Electric run" aria-pressed="false">
+  <svg width="40" height="44" viewBox="0 0 40 44"><path d="M24 3 L7 25 H19 L14 41 L33 17 H21 Z" fill="#ffe94a" stroke="#141018" stroke-width="4" stroke-linejoin="round"/></svg>
+</button>
+<div id="err">This needs WebGL to run.</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// ---------- palette (sampled from the character sheet) ----------
+const COL = {
+  bg: 0xE8502E, head: 0xFDBA1C, face: 0xE4F400, torso: 0xF3C23C, pants: 0x2A2630,
+  red: 0xE8502E, lav: 0xB0A2C4, lavDark: 0x7E6C9C, sticker: 0x5A4A78, ink: 0x161216,
+  planet: 0x63C9AB, planetSpot: 0x4FB396, treeA: 0x8E6CC0, treeB: 0xFFE7A8, trunk: 0x3B2E3F, rock: 0xC9BFD8
+};
+
+// ---------- renderer / scene ----------
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+catch (e) { document.getElementById('err').style.display = 'flex'; throw e; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(COL.bg);
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
+const effect = new OutlineEffect(renderer, { defaultThickness: 0.0065, defaultColor: [0.07, 0.05, 0.07] });
+
+scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+const sun = new THREE.DirectionalLight(0xffffff, 2.3);
+scene.add(sun, sun.target);
+
+// 3-band toon ramp
+const ramp = new THREE.DataTexture(new Uint8Array([120, 195, 255]), 3, 1, THREE.RedFormat);
+ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.needsUpdate = true;
+const matCache = {};
+function toon(color, outline = true) {
+  const k = color + (outline ? 'o' : 'n');
+  if (!matCache[k]) {
+    matCache[k] = new THREE.MeshToonMaterial({ color, gradientMap: ramp });
+    if (!outline) matCache[k].userData.outlineParameters = { visible: false };
+  }
+  return matCache[k];
+}
+const mesh = (g, c, outline = true) => new THREE.Mesh(g, toon(c, outline));
+
+// ---------- character ----------
+function buildCharacter() {
+  const root = new THREE.Group();     // origin at feet, +Y up, +Z forward
+  // flip pivot sits at the middle of the character (stick-cap top is at ~3.2) so flips
+  // and upside-down stick-spins rotate around the right point
+  const FLIP_C = 1.6;
+  const flip = new THREE.Group(); flip.position.y = FLIP_C; flip.rotation.order = 'YXZ'; root.add(flip);
+  const offs = new THREE.Group(); offs.position.y = -FLIP_C; flip.add(offs);
+  const body = new THREE.Group(); offs.add(body);
+  const parts = { flip, FLIP_C };
+
+  // legs + boots (legs 50% longer than v1)
+  const LIFT = 0.25; // everything above the hips moves up by the extra leg length
+  const bootGeo = new RoundedBoxGeometry(0.3, 0.22, 0.4, 4, 0.09);
+  for (const s of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(0.16 * s, 0.62 + LIFT, 0); body.add(hip);
+    const leg = mesh(new THREE.CylinderGeometry(0.095, 0.1, 0.69, 14), COL.pants); leg.position.y = -0.345; hip.add(leg);
+    const boot = mesh(bootGeo, COL.red); boot.position.set(0.01 * s, -0.75, 0.05); hip.add(boot);
+    // boot shaft: covers the ankle
+    const shaftB = mesh(new THREE.CylinderGeometry(0.122, 0.135, 0.2, 18), COL.red); shaftB.position.set(0.005 * s, -0.6, 0.0); hip.add(shaftB);
+    parts[s < 0 ? 'hipL' : 'hipR'] = hip;
+  }
+  // pants (big round hips)
+  const pants = mesh(new THREE.SphereGeometry(1, 28, 18), COL.pants);
+  pants.scale.set(0.37, 0.29, 0.3); pants.position.y = 0.74 + LIFT; body.add(pants);
+  // torso
+  const torso = mesh(new THREE.CylinderGeometry(0.17, 0.3, 0.32, 24), COL.torso);
+  torso.position.y = 0.99 + LIFT; body.add(torso);
+  // match the torso's depth/width ratio to the pants (0.30/0.37) so the waistline sits level all the way round
+  const TORSO_Z = 0.3 / 0.37; torso.scale.z = TORSO_Z; parts.torsoZ = TORSO_Z;
+  const neck = mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.16, 16), COL.torso);
+  neck.position.y = 1.18 + LIFT; body.add(neck);
+  // arms + mittens (arms 50% longer than v1)
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(0.24 * s, 1.08 + LIFT, 0); sh.rotation.z = 0.38 * s; body.add(sh);
+    const arm = mesh(new THREE.CapsuleGeometry(0.07, 0.38, 4, 10), COL.torso); arm.position.y = -0.24; sh.add(arm);
+    const mitt = mesh(new THREE.SphereGeometry(0.13, 18, 14), COL.red); mitt.scale.set(1, 1.08, 0.9); mitt.position.y = -0.54; sh.add(mitt);
+    const thumb = mesh(new THREE.SphereGeometry(0.055, 12, 10), COL.red); thumb.position.set(-0.09 * s, -0.49, 0.07); sh.add(thumb);
+    // glove cuff: covers the wrist
+    const cuff = mesh(new THREE.CylinderGeometry(0.088, 0.105, 0.15, 16), COL.red); cuff.position.y = -0.42; sh.add(cuff);
+    parts[s < 0 ? 'shL' : 'shR'] = sh;
+  }
+
+  // head
+  const head = new THREE.Group(); head.position.y = 1.8 + LIFT; body.add(head); parts.head = head;
+  const HR = 0.62;
+  head.add(mesh(new THREE.SphereGeometry(HR, 40, 28), COL.head));
+  // face: black rim + yellow-green disc (spherical caps facing +Z)
+  const rim = mesh(new THREE.SphereGeometry(HR + 0.006, 40, 16, 0, Math.PI * 2, 0, 0.98).rotateX(Math.PI / 2), COL.ink, false);
+  const face = mesh(new THREE.SphereGeometry(HR + 0.012, 40, 16, 0, Math.PI * 2, 0, 0.9).rotateX(Math.PI / 2), COL.face, false);
+  head.add(rim, face);
+  const Z = new THREE.Vector3(0, 0, 1);
+  const onFace = (m, x, y, z, off) => {
+    const d = new THREE.Vector3(x, y, z).normalize();
+    m.position.copy(d).multiplyScalar(HR + off);
+    m.quaternion.setFromUnitVectors(Z, d); head.add(m); return m;
+  };
+  parts.eyes = [];
+  for (const s of [-1, 1]) {
+    const eye = mesh(new THREE.SphereGeometry(1, 12, 10), COL.ink, false);
+    eye.scale.set(0.034, 0.048, 0.02); onFace(eye, 0.11 * s, 0.25, 1, 0.012);
+    parts.eyes.push(eye);
+  }
+  const nose = mesh(new THREE.SphereGeometry(1, 18, 14), COL.red);
+  nose.scale.set(0.085, 0.12, 0.09); onFace(nose, 0, 0.0, 1, 0.04);
+  const mouth = mesh(new THREE.TorusGeometry(0.115, 0.014, 6, 20, Math.PI).rotateZ(Math.PI), COL.ink, false);
+  onFace(mouth, 0, -0.27, 1, 0.022);
+
+  // collar + analog stick
+  const collar = mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.16, 24), COL.head);
+  collar.position.y = HR - 0.04; head.add(collar);
+  const collarLine = mesh(new THREE.TorusGeometry(0.205, 0.012, 6, 28), COL.ink, false);
+  collarLine.rotation.x = Math.PI / 2; collarLine.position.y = HR + 0.04; head.add(collarLine);
+  const stick = new THREE.Group(); stick.position.y = HR + 0.05; head.add(stick); parts.stick = stick;
+  const spinG = new THREE.Group(); stick.add(spinG); parts.spin = spinG;
+  const shaft = mesh(new THREE.CylinderGeometry(0.085, 0.09, 0.3, 16), COL.lav); shaft.position.y = 0.15; spinG.add(shaft);
+  const under = mesh(new THREE.CylinderGeometry(0.44, 0.42, 0.05, 36), COL.lavDark); under.position.y = 0.3; spinG.add(under);
+  const dome = mesh(new THREE.SphereGeometry(0.44, 36, 12, 0, Math.PI * 2, 0, Math.PI / 2), COL.lav);
+  dome.scale.y = 0.36; dome.position.y = 0.32; spinG.add(dome);
+  const topY = 0.32 + 0.44 * 0.36;
+  const stk = mesh(new THREE.SphereGeometry(1, 20, 10), COL.sticker, false);
+  stk.scale.set(0.12, 0.035, 0.12); stk.position.y = topY - 0.01; spinG.add(stk);
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + 0.4;
+    const nub = mesh(new THREE.SphereGeometry(1, 10, 8), COL.sticker, false);
+    nub.scale.set(0.035, 0.025, 0.035); nub.position.set(Math.cos(a) * 0.17, topY - 0.025, Math.sin(a) * 0.17); spinG.add(nub);
+  }
+  parts.torso = torso; parts.headY = head.position.y; parts.shY = 1.08 + LIFT;
+  return { root, body, parts };
+}
+
+const hero = buildCharacter();
+const CHAR_SCALE = 0.5;
+hero.root.scale.setScalar(CHAR_SCALE);
+scene.add(hero.root);
+
+// blob shadow
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.42, 24),
+  new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }));
+shadow.material.userData.outlineParameters = { visible: false };
+scene.add(shadow);
+
+// ---------- planet = a giant version of his own head ----------
+const R = 9;
+const HR_N = 0.62, HS = R / HR_N;              // hero head radius -> planet scale factor
+const planet = mesh(new THREE.SphereGeometry(R, 72, 54), COL.head);
+scene.add(planet);
+
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const randDir = () => {
+  const u = rnd() * 2 - 1, t = rnd() * Math.PI * 2, s = Math.sqrt(1 - u * u);
+  return new THREE.Vector3(s * Math.cos(t), u, s * Math.sin(t));
+};
+const Y = new THREE.Vector3(0, 1, 0);
+const FACE_DIR = new THREE.Vector3(0, 0, 1);
+
+// face: black rim + yellow-green disc with a canvas-drawn, animated expression
+const pRim = mesh(new THREE.SphereGeometry(R + 0.012, 72, 20, 0, Math.PI * 2, 0, 0.98).rotateX(Math.PI / 2), COL.ink, false);
+const faceGeo = new THREE.SphereGeometry(R + 0.024, 72, 28, 0, Math.PI * 2, 0, 0.9).rotateX(Math.PI / 2);
+{ // planar (front-view) UVs so the canvas reads like a drawing of the face
+  const FW = 0.8 * R, uv = faceGeo.attributes.uv, ps = faceGeo.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.5 + ps.getX(i) / (2 * FW), 0.5 + ps.getY(i) / (2 * FW));
+}
+const faceCanvas = document.createElement('canvas'); faceCanvas.width = faceCanvas.height = 512;
+const fctx = faceCanvas.getContext('2d');
+const faceTex = new THREE.CanvasTexture(faceCanvas); faceTex.colorSpace = THREE.SRGBColorSpace; faceTex.anisotropy = 4;
+const faceMat = new THREE.MeshToonMaterial({ map: faceTex, gradientMap: ramp });
+faceMat.userData.outlineParameters = { visible: false };
+scene.add(pRim, new THREE.Mesh(faceGeo, faceMat));
+
+const INK = '#161216';
+function drawFace(expr, blink, t, cl = {}) {
+  const x = fctx;
+  x.fillStyle = '#E4F400'; x.fillRect(0, 0, 512, 512);
+  x.lineCap = x.lineJoin = 'round'; x.strokeStyle = x.fillStyle = INK;
+  const sh = expr === 'laugh' ? Math.sin(t / 45) * 6 : 0;   // laughing shake
+  const L = 222, Rr = 290, EY = 179 + sh;
+  const dot = (cx, b) => { x.fillStyle = INK; x.beginPath(); x.ellipse(cx, EY, 17 * (1 + 0.3 * b), Math.max(2.5, 24 * (1 - 0.9 * b)), 0, 0, 7); x.fill(); };
+  const happy = cx => { x.lineWidth = 12; x.beginPath(); x.arc(cx, EY + 12, 21, Math.PI * 1.12, Math.PI * 1.88); x.stroke(); };
+  const squint = (cx, s) => { x.lineWidth = 11; x.beginPath(); x.moveTo(cx - 18 * s, EY - 16); x.lineTo(cx + 14 * s, EY); x.lineTo(cx - 18 * s, EY + 16); x.stroke(); };
+  const big = (cx, b) => {
+    x.fillStyle = '#fff'; x.lineWidth = 8; x.beginPath(); x.ellipse(cx, EY - 6, 36, Math.max(3, 40 * (1 - 0.92 * b)), 0, 0, 7); x.fill(); x.stroke();
+    if (b < 0.5) { x.fillStyle = INK; x.beginPath(); x.arc(cx + (cx < 256 ? 6 : -6), EY - 2, 12, 0, 7); x.fill(); }
+  };
+  const brow = (cx, s) => { x.lineWidth = 11; x.beginPath(); x.moveTo(cx - 26 * s, EY - 50); x.lineTo(cx + 22 * s, EY - 34); x.stroke(); };
+  const smile = (w = 62) => { x.lineWidth = 14; x.beginPath(); x.arc(256, 300 + sh, w, 0.18 * Math.PI, 0.82 * Math.PI); x.stroke(); };
+  const tongue = (cx, cy, rx, ry) => { x.fillStyle = '#E8502E'; x.lineWidth = 7; x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, 7); x.fill(); x.stroke(); };
+  // anything he's standing on gets squeezed shut
+  const closedEye = cx => { x.lineWidth = 12; x.beginPath(); x.arc(cx, EY - 12, 24, 0.15 * Math.PI, 0.85 * Math.PI); x.stroke();
+    x.lineWidth = 6; [-1, 0, 1].forEach(k => { x.beginPath(); x.moveTo(cx + k * 14, EY + 10); x.lineTo(cx + k * 18, EY + 20); x.stroke(); }); };
+  if (cl.l || cl.r || cl.m) {
+    const keep = expr === 'shocked' ? 'smile' : expr;
+    if (cl.l) closedEye(L); else if (keep === 'laugh' || (keep === 'wink' && false)) happy(L); else dot(L, blink);
+    if (cl.r) closedEye(Rr); else if (keep === 'laugh' || keep === 'wink') happy(Rr); else dot(Rr, blink);
+    if (cl.m) { x.lineWidth = 14; x.beginPath(); x.moveTo(214, 352); x.quadraticCurveTo(256, 360, 298, 352); x.stroke();
+      x.lineWidth = 8; [214, 298].forEach(px => { x.beginPath(); x.moveTo(px, 340); x.lineTo(px, 364); x.stroke(); }); }
+    else if (keep === 'frown') { x.lineWidth = 14; x.beginPath(); x.arc(256, 408, 56, 1.22 * Math.PI, 1.78 * Math.PI); x.stroke(); }
+    else smile(keep === 'wink' ? 70 : 62);
+    faceTex.needsUpdate = true; return;
+  }
+  switch (expr) {
+    case 'wink':    dot(L, blink); happy(Rr); smile(70); break;
+    case 'laugh':   happy(L); happy(Rr);
+      x.fillStyle = INK; x.beginPath(); x.moveTo(256 + 70, 316 + sh); x.arc(256, 316 + sh, 70, 0, Math.PI); x.closePath(); x.fill();
+      x.fillStyle = '#E8502E'; x.beginPath(); x.ellipse(256, 364 + sh, 36, 16, 0, Math.PI, 0, true); x.fill(); break;
+    case 'shocked': big(L, blink); big(Rr, blink); x.fillStyle = INK; x.beginPath(); x.ellipse(256, 356, 24, 34, 0, 0, 7); x.fill(); break;
+    case 'frown':   dot(L, blink); dot(Rr, blink); brow(L, 1); brow(Rr, -1);
+      x.lineWidth = 14; x.beginPath(); x.arc(256, 408, 56, 1.22 * Math.PI, 1.78 * Math.PI); x.stroke(); break;
+    case 'silly':   dot(L, blink); squint(Rr, -1); tongue(284, 376, 20, 28); smile(66);
+      x.lineWidth = 5; x.beginPath(); x.moveTo(284, 364); x.lineTo(284, 392); x.stroke(); break;
+    default:        dot(L, blink); dot(Rr, blink); smile(62);
+  }
+  faceTex.needsUpdate = true;
+}
+const face = { expr: 'smile', until: 0, key: '', blinkAt: 1200, blinkStart: -1e4, cl: { l: false, r: false, m: false } };
+function setExpr(e, ms, now) { face.expr = e; face.until = ms ? now + ms : 0; }
+function updateFace(now) {
+  if (face.until && now > face.until) { face.expr = 'smile'; face.until = 0; }
+  if (now > face.blinkAt) { face.blinkStart = now; face.blinkAt = now + (Math.random() < 0.2 ? 260 : 1800 + Math.random() * 3200); }
+  const b = now - face.blinkStart < 140 ? Math.sin(Math.PI * (now - face.blinkStart) / 140) : 0;
+  const c = face.cl, anyC = c.l || c.r || c.m;
+  const key = face.expr + '|' + Math.round(b * 4) + (face.expr === 'laugh' && !anyC ? '|' + ((now / 40) | 0) : '') + '|' + (+c.l) + (+c.r) + (+c.m);
+  if (key !== face.key) { face.key = key; drawFace(face.expr, b, now, c); }
+}
+drawFace('smile', 0, 0);
+
+// the big red nose — a hill on the face
+const pNose = mesh(new THREE.SphereGeometry(1, 28, 20), COL.red);
+pNose.scale.set(0.085 * HS, 0.12 * HS, 0.09 * HS); pNose.position.set(0, 0, R + 0.04 * HS);
+scene.add(pNose);
+
+// collar + giant analog stick on top (scaled copy of his own, a bit smaller so it fits the sky)
+const giant = new THREE.Group(); giant.scale.setScalar(HS); scene.add(giant);
+const gCollar = mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.16, 40), COL.head); gCollar.position.y = HR_N - 0.04; giant.add(gCollar);
+const gLine = mesh(new THREE.TorusGeometry(0.205, 0.008, 6, 48), COL.ink, false); gLine.rotation.x = Math.PI / 2; gLine.position.y = HR_N + 0.04; giant.add(gLine);
+const gm = (c, ol = true) => { const m = new THREE.MeshToonMaterial({ color: c, gradientMap: ramp }); if (!ol) m.userData.outlineParameters = { visible: false }; return m; };
+const capMats = [gm(COL.lav), gm(COL.lavDark), gm(COL.sticker, false)];
+const gStick = new THREE.Group(); gStick.position.y = HR_N + 0.05; gStick.scale.setScalar(0.75); giant.add(gStick);
+{
+  const add = (geo, m, y) => { const o = new THREE.Mesh(geo, m); o.position.y = y; gStick.add(o); return o; };
+  add(new THREE.CylinderGeometry(0.085, 0.09, 0.3, 24), capMats[0], 0.15);
+  add(new THREE.CylinderGeometry(0.44, 0.42, 0.05, 48), capMats[1], 0.3);
+  add(new THREE.SphereGeometry(0.44, 48, 14, 0, Math.PI * 2, 0, Math.PI / 2), capMats[0], 0.32).scale.y = 0.36;
+  const topY = 0.32 + 0.44 * 0.36;
+  add(new THREE.SphereGeometry(1, 24, 10), capMats[2], topY - 0.01).scale.set(0.12, 0.035, 0.12);
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + 0.4, n = add(new THREE.SphereGeometry(1, 10, 8), capMats[2], topY - 0.025);
+    n.scale.set(0.035, 0.025, 0.035); n.position.x = Math.cos(a) * 0.17; n.position.z = Math.sin(a) * 0.17;
+  }
+}
+const CAP_CENTER = new THREE.Vector3(0, (HR_N + 0.05 + 0.3 * 0.75) * HS, 0);
+const gStickTarget = new THREE.Quaternion();
+
+// things you bump into: the nose and the collar
+const obstacles = [
+  { p: Y.clone(), a: (0.25 * HS) / R + 0.04, maxH: 1.3 },   // collar wall around the stick
+];
+// heights (above the sphere surface) of the giant stick cap — you can land on top of it
+const CAP_RAD = 0.44 * 0.75 * HS;
+const COLLAR_ANG = Math.atan((0.225 * HS) / ((HR_N + 0.04) * HS));
+const CAP_RIM_H = (HR_N + 0.05 + 0.75 * 0.32) * HS - R;
+const CAP_TOP_H = (HR_N + 0.05 + 0.75 * (0.32 + 0.44 * 0.36)) * HS - R;
+const CAP_UNDER_H = (HR_N + 0.05 + 0.75 * 0.275) * HS - R;
+function capHeight(u) {
+  if (u.y <= 0) return -1;
+  const r = (R + CAP_TOP_H) * Math.sqrt(Math.max(0, 1 - u.y * u.y));
+  if (r >= CAP_RAD) return -1;
+  return CAP_RIM_H + (CAP_TOP_H - CAP_RIM_H) * Math.sqrt(1 - (r / CAP_RAD) ** 2);
+}
+// the nose is a trampoline
+const NOSE_AX = 0.085 * HS / R + 0.02, NOSE_AY = 0.12 * HS / R + 0.02, NOSE_H = 0.13 * HS;
+function noseHeight(u) {
+  if (u.z <= 0) return -1;
+  const ax = Math.atan2(u.x, u.z) / NOSE_AX, ay = Math.atan2(u.y, u.z) / NOSE_AY, q = ax * ax + ay * ay;
+  return q >= 1 ? -1 : NOSE_H * Math.sqrt(1 - q);
+}
+
+// ---------- the sun (ported from Tic Tac Tower) ----------
+const SUN_PAL = [0xb4ff00, 0xeaff5e, 0xe3ff6a]; // core, core pulse, cheeks
+const sun3 = (() => {
+  const root = new THREE.Group();
+  const noLine = m => { m.userData.outlineParameters = { visible: false }; return m; };
+  const coreM = new THREE.MeshBasicMaterial({ color: SUN_PAL[0] });
+  const ink = noLine(new THREE.MeshBasicMaterial({ color: 0x1d2a00 }));
+  const cheekM = noLine(new THREE.MeshBasicMaterial({ color: SUN_PAL[2] }));
+  const core = new THREE.Mesh(new THREE.SphereGeometry(2.1, 24, 16), coreM);
+  const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(3.1, 1),
+    noLine(new THREE.MeshBasicMaterial({ color: 0xfff6c8, wireframe: true, transparent: true, opacity: 0.85, depthWrite: false })));
+  root.add(core, wire);
+  const eyes = [], cheeks = [];
+  for (const sg of [-1, 1]) {
+    const e = new THREE.Mesh(new THREE.CircleGeometry(0.065, 10), ink); e.position.set(sg * 0.14, 0.16, 2.08); e.scale.y = 1.6; root.add(e); eyes.push(e);
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), cheekM); c.position.set(sg * 0.27, -0.03, 2.06); root.add(c); cheeks.push(c);
+  }
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), ink); nose.position.set(0, 0.07, 2.1); root.add(nose);
+  const mo = new THREE.Mesh(new THREE.CircleGeometry(0.05, 10), ink); mo.position.set(0, -0.04, 2.115); root.add(mo);
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.014, 6, 14, Math.PI), ink);
+  smile.rotation.z = Math.PI; smile.position.set(0, 0.045, 2.115); root.add(smile);
+  root.position.set(0.55, 0.45, -0.7).normalize().multiplyScalar(62);
+  root.scale.setScalar(2.4);
+  scene.add(root);
+  const k1 = new THREE.Color(SUN_PAL[0]), k2 = new THREE.Color(SUN_PAL[1]);
+  let nextBlink = 2000, nextO = 5000;
+  return {
+    update(t) {
+      root.lookAt(camera.position);
+      coreM.color.copy(k1).lerp(k2, 0.5 + 0.5 * Math.sin(t / 380));
+      core.scale.setScalar(1 + 0.04 * Math.sin(t / 380));
+      wire.rotation.y = t / 2400; wire.rotation.x = t / 5200;
+      cheeks.forEach(c => c.scale.setScalar(1 + 0.18 * Math.sin(t / 260)));
+      if (t > nextBlink + 140) nextBlink = t + 1800 + Math.random() * 4000;
+      const bl = t > nextBlink ? 1 : 0;
+      eyes.forEach(e => e.scale.set(1 + 0.5 * bl, 1.6 * (1 - bl) + 0.14 * bl, 1));
+      if (t > nextO + 900) nextO = t + 4000 + Math.random() * 5000;
+      const oh = t > nextO; mo.visible = oh; smile.visible = !oh;
+      mo.scale.setScalar(oh ? 1.8 : 1);
+    }
+  };
+})();
+
+// ---------- star constellations (4- and 5-point stars) ----------
+function starShape(points, inner) {
+  const sh = new THREE.Shape();
+  for (let i = 0; i < points * 2; i++) {
+    const a = Math.PI / 2 + i * Math.PI / points, r = i % 2 ? inner : 1;
+    i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  return new THREE.ShapeGeometry(sh);
+}
+const STAR_GEO = { 4: starShape(4, 0.32), 5: starShape(5, 0.45) };
+const skyMat = c => { const m = new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }); m.userData.outlineParameters = { visible: false }; return m; };
+const STAR_INK = skyMat(0x1a1216), STAR_COLS = [0xfff4cf, 0xffe066, 0xffffff, 0xcff6ff].map(skyMat);
+const lineMat = new THREE.MeshBasicMaterial({ color: 0xfff1d6, transparent: true, opacity: 0.55, depthWrite: false });
+lineMat.userData.outlineParameters = { visible: false };
+const SKY_R = 88, twinklers = [];
+function addStar(dir, size, points) {
+  const g = new THREE.Group();
+  const ink = new THREE.Mesh(STAR_GEO[points], STAR_INK); ink.scale.setScalar(1.38); ink.position.z = -0.05;
+  const fill = new THREE.Mesh(STAR_GEO[points], STAR_COLS[(rnd() * STAR_COLS.length) | 0]);
+  g.add(ink, fill);
+  g.position.copy(dir).multiplyScalar(SKY_R);
+  g.lookAt(0, 0, 0); g.rotateZ((rnd() - 0.5) * 0.6);
+  g.scale.setScalar(size);
+  g.userData = { base: size, ph: rnd() * 6.28, sp: 0.6 + rnd() * 1.4 };
+  scene.add(g); twinklers.push(g);
+  return g.position.clone();
+}
+function addLink(a, b) {
+  const d = b.clone().sub(a), len = d.length();
+  const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, len, 5, 1, true), lineMat);
+  seg.position.copy(a).addScaledVector(d, 0.5);
+  seg.quaternion.setFromUnitVectors(Y, d.normalize());
+  scene.add(seg);
+}
+const N_CONST = 12;
+for (let c = 0; c < N_CONST; c++) {
+  // spread constellation centres evenly over the sky
+  const yy = 1 - 2 * (c + 0.5) / N_CONST, rr = Math.sqrt(1 - yy * yy), th = c * 2.39996 + rnd() * 0.4;
+  const centre = new THREE.Vector3(rr * Math.cos(th), yy, rr * Math.sin(th)).normalize();
+  const t1 = new THREE.Vector3().crossVectors(centre, Math.abs(centre.y) < 0.9 ? Y : new THREE.Vector3(1, 0, 0)).normalize();
+  const t2 = new THREE.Vector3().crossVectors(centre, t1);
+  const n = 4 + ((rnd() * 4) | 0), pts = [];
+  let u = 0, v = 0, heading = rnd() * 6.28;
+  for (let i = 0; i < n; i++) {
+    const dir = centre.clone().addScaledVector(t1, u).addScaledVector(t2, v).normalize();
+    pts.push(addStar(dir, 1.3 + rnd() * 1.1, rnd() < 0.55 ? 5 : 4));
+    heading += (rnd() - 0.5) * 2.2; const step = 0.07 + rnd() * 0.05;
+    u += Math.cos(heading) * step; v += Math.sin(heading) * step;
+  }
+  for (let i = 1; i < n; i++) addLink(pts[i - 1], pts[i]);
+  if (n > 4 && rnd() < 0.6) addLink(pts[0], pts[n - 1 - ((rnd() * 2) | 0)]); // close a loop sometimes
+}
+// loose background stars
+for (let i = 0; i < 90; i++) addStar(randDir(), 0.35 + rnd() * 0.45, rnd() < 0.75 ? 4 : 5);
+
+// ---------- input ----------
+const input = { x: 0, y: 0, jump: false };
+const keys = new Set();
+let jumpHeld = false;
+addEventListener('keydown', e => { keys.add(e.code); if (e.code === 'Space') { if (!e.repeat) input.jump = true; jumpHeld = true; e.preventDefault(); } });
+addEventListener('keyup', e => { keys.delete(e.code); if (e.code === 'Space') jumpHeld = false; });
+
+const knob = document.getElementById('knob');
+const joySvg = document.getElementById('joy');
+const zone = document.getElementById('stickZone');
+let stickId = null, touchVec = { x: 0, y: 0 };
+function joyCenter() {
+  const r = joySvg.getBoundingClientRect();
+  return { x: r.left + r.width * (100 / 200), y: r.top + r.height * (132 / 220), s: r.width / 200 };
+}
+const KNOB_MAX = 48; // svg units
+function setStickFromPointer(e) {
+  const c = joyCenter();
+  let dx = (e.clientX - c.x) / c.s, dy = (e.clientY - c.y) / c.s;
+  const len = Math.hypot(dx, dy);
+  if (len > KNOB_MAX) { dx *= KNOB_MAX / len; dy *= KNOB_MAX / len; }
+  touchVec.x = dx / KNOB_MAX; touchVec.y = -dy / KNOB_MAX;
+}
+zone.addEventListener('pointerdown', e => { stickId = e.pointerId; zone.setPointerCapture(e.pointerId); setStickFromPointer(e); e.preventDefault(); });
+zone.addEventListener('pointermove', e => { if (e.pointerId === stickId) setStickFromPointer(e); });
+const endStick = e => { if (e.pointerId === stickId) { stickId = null; touchVec.x = touchVec.y = 0; } };
+zone.addEventListener('pointerup', endStick); zone.addEventListener('pointercancel', endStick);
+
+const jumpBtn = document.getElementById('jump');
+jumpBtn.addEventListener('pointerdown', e => { input.jump = true; jumpHeld = true; jumpBtn.setPointerCapture(e.pointerId); jumpBtn.classList.add('on'); e.preventDefault(); e.stopPropagation(); });
+const jumpUp = () => { jumpHeld = false; jumpBtn.classList.remove('on'); };
+jumpBtn.addEventListener('pointerup', jumpUp); jumpBtn.addEventListener('pointercancel', jumpUp);
+
+// electric run: tap to toggle (Shift held on keyboard)
+const zapBtn = document.getElementById('zap');
+let zapOn = false;
+zapBtn.addEventListener('pointerdown', e => {
+  zapOn = !zapOn; zapBtn.classList.toggle('on', zapOn); zapBtn.setAttribute('aria-pressed', zapOn);
+  e.preventDefault(); e.stopPropagation();
+});
+
+// spark particles
+const sparkTex = (() => {
+  const mk = draw => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+    x.lineJoin = x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const bolt = x => { const p = [[22,4],[38,26],[28,28],[44,58],[18,32],[28,30]];
+    x.beginPath(); p.forEach(([a,b],i)=> i ? x.lineTo(a,b) : x.moveTo(a,b)); x.closePath();
+    x.lineWidth = 7; x.strokeStyle = '#141018'; x.stroke(); x.fillStyle = '#fff'; x.fill(); };
+  const star = x => { x.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, r = i % 2 ? 7 : 28; x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); } x.closePath();
+    x.lineWidth = 6; x.strokeStyle = '#141018'; x.stroke(); x.fillStyle = '#fff'; x.fill(); };
+  const zig = x => { x.beginPath(); x.moveTo(6, 34); [[18,20],[28,40],[40,18],[50,36],[58,26]].forEach(([a,b]) => x.lineTo(a,b));
+    x.lineWidth = 11; x.strokeStyle = '#141018'; x.stroke(); x.lineWidth = 5; x.strokeStyle = '#fff'; x.stroke(); };
+  return [mk(bolt), mk(star), mk(zig)];
+})();
+const SPARK_COLS = [0x7ff6ff, 0xfff35c, 0xffffff, 0xa8ffef];
+const sparks = [];
+function emitSpark(pos, upV, big) {
+  const m = new THREE.SpriteMaterial({ map: sparkTex[(Math.random() * 3) | 0], color: SPARK_COLS[(Math.random() * 4) | 0], transparent: true, depthWrite: false });
+  const s = new THREE.Sprite(m);
+  s.position.copy(pos);
+  const size = (big ? 0.42 : 0.26) * (0.7 + Math.random() * 0.6);
+  s.scale.setScalar(size);
+  const vel = new THREE.Vector3((Math.random() - .5), (Math.random() - .5), (Math.random() - .5)).multiplyScalar(1.4).addScaledVector(upV, 0.9 + Math.random() * 1.2);
+  scene.add(s);
+  sparks.push({ s, vel, life: 0, max: 0.35 + Math.random() * 0.4, size, spin: (Math.random() - .5) * 14 });
+}
+function updateSparks(dt) {
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const p = sparks[i]; p.life += dt;
+    const k = p.life / p.max;
+    if (k >= 1) { scene.remove(p.s); p.s.material.dispose(); sparks.splice(i, 1); continue; }
+    p.s.position.addScaledVector(p.vel, dt); p.vel.multiplyScalar(1 - 3 * dt);
+    p.s.material.rotation += p.spin * dt;
+    const flick = Math.random() < 0.15 ? 0.4 : 1; // electric flicker
+    p.s.scale.setScalar(p.size * (1 - k * 0.7) * flick);
+    p.s.material.opacity = 1 - k * k;
+  }
+}
+
+// free camera: one finger anywhere (not on a control) orbits left/right + up/down,
+// two fingers pinch to zoom. Mouse: drag to orbit, wheel to zoom.
+let orbitDelta = 0, pitchDelta = 0;
+let camPitch = 0.46, camDist = 6.7;            // angle above the ground, distance from hero
+const PITCH_MIN = 0.12, PITCH_MAX = 1.4, DIST_MIN = 2.6, DIST_MAX = 18;
+const camPtrs = new Map();
+let pinchD = 0;
+const cvs = renderer.domElement;
+const pinchDist = () => { const [a, b] = [...camPtrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+cvs.addEventListener('pointerdown', e => {
+  cvs.setPointerCapture(e.pointerId);
+  camPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (camPtrs.size === 2) pinchD = pinchDist();
+});
+cvs.addEventListener('pointermove', e => {
+  const p = camPtrs.get(e.pointerId); if (!p) return;
+  if (camPtrs.size === 1) { orbitDelta += e.clientX - p.x; pitchDelta += e.clientY - p.y; }
+  p.x = e.clientX; p.y = e.clientY;
+  if (camPtrs.size >= 2) {
+    const d = pinchDist();
+    if (pinchD > 0 && d > 0) camDist = THREE.MathUtils.clamp(camDist * pinchD / d, DIST_MIN, DIST_MAX);
+    pinchD = d;
+  }
+});
+const endCam = e => { camPtrs.delete(e.pointerId); pinchD = camPtrs.size === 2 ? pinchDist() : 0; };
+cvs.addEventListener('pointerup', endCam); cvs.addEventListener('pointercancel', endCam);
+cvs.addEventListener('wheel', e => { e.preventDefault(); camDist = THREE.MathUtils.clamp(camDist * Math.exp(e.deltaY * 0.0012), DIST_MIN, DIST_MAX); }, { passive: false });
+
+
+// ---------- player state on the sphere ----------
+// he starts hidden; at the reveal he's sitting with his back against the collar of the giant stick
+const SIT_ANG = obstacles[0].a + 0.02;
+const up = new THREE.Vector3(0, Math.cos(SIT_ANG), Math.sin(SIT_ANG));
+const facing = new THREE.Vector3(0, -Math.sin(SIT_ANG), Math.cos(SIT_ANG));   // looking out over the face
+const camFwd = facing.clone().negate();                                        // camera in front of him
+let height = 0, vy = 0, grounded = true, runPhase = 0, runAmt = 0, airT = 0, floorH = 0;
+const SPEED = 5, ZAP_SPEED = 9.5, GRAV = 22, JUMP_V = 7.6, FLIP_V = JUMP_V * 1.3, FLIP_DUR = 0.62, BOUNCE_V = 19;
+let sparkAcc = 0, simT = 0;
+let blinkAt = 1500, blinkStart = -1000;
+let usedFlip = false, flipT = -1;
+let idleTime = 0, dancing = false;
+const BD_START = 7;
+let sitting = true, sitAmt = 1;
+let gliding = false, glideAmt = 0, spinV = 0;
+let launchLeft = 0, launchOmega = 0; const launchAxis = new THREE.Vector3();
+let noseBoing = -1;
+hero.root.visible = false; shadow.visible = false;
+
+const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), basis = new THREE.Matrix4();
+const stickTarget = new THREE.Quaternion();
+const ortho = (v) => v.addScaledVector(up, -v.dot(up)).normalize();
+const signedAngle = (a, b) => Math.atan2(up.dot(tmpV2.copy(a).cross(b)), a.dot(b));
+const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
+const lerp = (a, b, k) => a + (b - a) * k;
+
+// rotate the player (and the camera/facing frames) along the sphere
+function transport(q) {
+  up.applyQuaternion(q).normalize(); camFwd.applyQuaternion(q); facing.applyQuaternion(q);
+  ortho(camFwd); ortho(facing);
+}
+
+// ---------- intro / reveal ----------
+let mode = 'intro', revealT = 0, controls = false;
+const A_POS = new THREE.Vector3(), A_LOOK = new THREE.Vector3();
+const B_POS = new THREE.Vector3(0, R * 1.0, R * 3.4), B_LOOK = new THREE.Vector3(0, R * 0.72, 0);
+const INTRO_EXPR = ['smile', 'wink', 'laugh', 'shocked', 'frown', 'silly'];
+// close-up framed so the eyes sit ~2 inches below the top of the screen and the smile ~1 inch above the bottom
+function introPose(pos, look) {
+  const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const PPI = 145, H = innerHeight;                       // ~CSS px per inch on phones
+  const eyesTop = Math.min(2 * PPI / H, 0.42), smileBot = Math.min(PPI / H, 0.24);
+  const Ne = 1 - 2 * eyesTop, Nm = -1 + 2 * smileBot;    // target screen heights (NDC)
+  const e = 0.24 * R, m = -0.33 * R;                      // eye centre / smile bottom on the face
+  const ze = Math.sqrt(R * R - e * e - (0.106 * R) ** 2), zm = Math.sqrt(R * R - m * m);
+  const Zc = ((e - m) / tanH + Ne * ze - Nm * zm) / (Ne - Nm);
+  const cy = e - Ne * (Zc - ze) * tanH;
+  pos.set(0, cy, Zc); look.set(0, cy, 0);
+}
+function startReveal() {
+  if (mode !== 'intro') return;
+  mode = 'reveal'; revealT = 0;
+  A_POS.copy(camera.position); introPose(tmpV, A_LOOK);
+  hero.root.visible = true; shadow.visible = true;
+  setExpr('wink', 1500, simT);
+}
+addEventListener('pointerdown', () => startReveal(), true);
+addEventListener('keydown', () => startReveal(), true);
+
+function launchToStick() {
+  height = Math.max(height, floorH);
+  vy = BOUNCE_V; grounded = false; usedFlip = false; flipT = -1;
+  // time until he comes back down to the height of the cap top
+  const disc = vy * vy - 2 * GRAV * (CAP_TOP_H - height);
+  const T = (vy + Math.sqrt(Math.max(0, disc))) / GRAV;
+  const ang = up.angleTo(Y);
+  launchAxis.copy(up).cross(Y).normalize();
+  launchLeft = Math.max(0, ang - 0.04); launchOmega = launchLeft / T;
+  facing.copy(Y); ortho(facing); camFwd.copy(facing);
+  setExpr('shocked', 1300, simT);
+  noseBoing = 0;
+}
+
+function update(dt) {
+  simT += dt * 1000;
+  // gather input
+  let kx = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+  let ky = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+  let ix = touchVec.x, iy = touchVec.y;
+  if (kx || ky) { const l = Math.hypot(kx, ky); ix = kx / l; iy = ky / l; }
+  if (!controls) { ix = iy = 0; input.jump = false; }
+  let mag = Math.min(1, Math.hypot(ix, iy));
+  knob.setAttribute('transform', `translate(${100 + ix * KNOB_MAX} ${132 - iy * KNOB_MAX})`);
+
+  // stand up from sitting on first input
+  if (sitting && (mag > 0.1 || input.jump)) { sitting = false; input.jump = false; }
+  sitAmt += ((sitting ? 1 : 0) - sitAmt) * Math.min(1, 6 * dt);
+  mag *= (1 - sitAmt);
+
+  if (mode === 'play') {
+    const turn = orbitDelta * 0.006 + ((keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0)) * 2.2 * dt;
+    camPitch = THREE.MathUtils.clamp(camPitch + pitchDelta * 0.005, PITCH_MIN, PITCH_MAX);
+    if (turn) camFwd.applyAxisAngle(up, -turn);
+  }
+  orbitDelta = 0; pitchDelta = 0;
+  const camHeld = camPtrs.size > 0;
+
+  const move = new THREE.Vector3();
+  const right = tmpV.copy(camFwd).cross(up).normalize();
+  move.addScaledVector(right, ix).addScaledVector(camFwd, iy);
+  if (move.lengthSq() > 1e-6) move.normalize();
+
+  const zapping = controls && (zapOn || keys.has('ShiftLeft') || keys.has('ShiftRight'));
+  const zapRun = zapping && mag > 0.08;
+  if (mag > 0.08) {
+    const dist = (zapping ? ZAP_SPEED : SPEED) * (gliding ? 1.15 : 1) * mag * dt;
+    tmpQ.setFromAxisAngle(tmpV2.copy(up).cross(move).normalize(), dist / (R + height * 0.5));
+    transport(tmpQ); move.applyQuaternion(tmpQ); ortho(move);
+    const a = signedAngle(facing, move);
+    facing.applyAxisAngle(up, a * Math.min(1, 14 * dt));
+    const ca = signedAngle(camFwd, facing);
+    if (mode === 'play' && !camHeld && Math.abs(ca) < 2.2) camFwd.applyAxisAngle(up, ca * Math.min(1, 0.9 * mag * dt));
+  }
+  // nose-bounce flight carries him over to the stick
+  if (launchLeft > 0) {
+    const step = Math.min(launchLeft, launchOmega * dt);
+    tmpQ.setFromAxisAngle(launchAxis, step); transport(tmpQ); launchLeft -= step;
+  }
+  // collar wall
+  for (const o of obstacles) {
+    if (o.maxH !== undefined && height > o.maxH) continue;
+    const d = up.dot(o.p), ang = Math.acos(Math.min(1, d));
+    if (ang < o.a) {
+      const t = tmpV2.copy(up).addScaledVector(o.p, -d);
+      if (t.lengthSq() < 1e-8) t.set(1, 0, 0);
+      t.normalize();
+      up.copy(o.p).multiplyScalar(Math.cos(o.a)).addScaledVector(t, Math.sin(o.a)).normalize();
+    }
+  }
+  ortho(camFwd); ortho(facing);
+
+  // ---- what's under his feet: planet, nose (bouncy) or the stick cap ----
+  const capH = capHeight(up), nH = noseHeight(up);
+  let floor = 0, bouncy = false;
+  if (nH > 0) { floor = nH; bouncy = true; }
+  const thP = Math.acos(THREE.MathUtils.clamp(up.y, -1, 1));
+  if (up.y > 0 && thP < COLLAR_ANG) {                     // flat top of the collar ring
+    const ch = (HR_N + 0.04) * HS / Math.cos(thP) - R;
+    if (height >= ch - 0.4) floor = Math.max(floor, ch);
+  }
+  if (capH > 0 && height >= capH - 0.4) floor = capH;
+  floorH = floor;
+  // bonk your head on the underside of the cap
+  if (capH > 0 && height < capH - 0.4 && vy > 0 && height + 1.5 > CAP_UNDER_H) vy = 0;
+
+  // jump / double-jump flip
+  if (input.jump) {
+    if (grounded) { vy = JUMP_V; grounded = false; usedFlip = false; }
+    else if (!usedFlip && launchLeft <= 0) { vy = FLIP_V; usedFlip = true; flipT = 0; setExpr('shocked', 900, simT); }
+  }
+  input.jump = false;
+
+  if (grounded) {
+    if (bouncy) launchToStick();
+    else if (height > floor + 0.05) { grounded = false; vy = 0; }   // walked off an edge
+    else height = floor;
+  }
+  gliding = !grounded && controls && jumpHeld && vy < 0 && launchLeft <= 0 && flipT < 0;
+  if (!grounded) {
+    if (gliding) vy = Math.max(vy - GRAV * 0.12 * dt, -1.5);
+    else vy -= GRAV * dt;
+    height += vy * dt; airT += dt;
+    if (height <= floor && vy <= 0) {
+      if (bouncy) launchToStick();
+      else { height = floor; vy = 0; grounded = true; airT = 0; usedFlip = false; flipT = -1; launchLeft = 0; }
+    }
+  }
+  glideAmt += ((gliding ? 1 : 0) - glideAmt) * Math.min(1, 10 * dt);
+
+  // giant face: eyes / mouth close when he stands on them
+  const fc = face.cl; fc.l = fc.r = fc.m = false;
+  if (mode === 'play' && grounded && floor === 0 && up.z > 0.5) {
+    const fx = up.x, fy = up.y;
+    fc.l = ((fx + 0.106) / 0.085) ** 2 + ((fy - 0.24) / 0.105) ** 2 < 1;
+    fc.r = ((fx - 0.106) / 0.085) ** 2 + ((fy - 0.24) / 0.105) ** 2 < 1;
+    fc.m = Math.abs(Math.hypot(fx, fy + 0.1375) - 0.194) < 0.06 && fy < -0.2;
+  }
+
+  // breakdance timer
+  if (mode === 'play' && grounded && !sitting && mag < 0.05) idleTime += dt; else idleTime = 0;
+  const wasDancing = dancing;
+  dancing = idleTime > BD_START;
+  if (wasDancing && !dancing) setExpr('smile', 0, simT);
+
+  // place character
+  const pos = new THREE.Vector3().copy(up).multiplyScalar(R + height);
+  hero.root.position.copy(pos);
+  const xAxis = new THREE.Vector3().copy(up).cross(facing).normalize();
+  basis.makeBasis(xAxis, up, facing);
+  hero.root.quaternion.setFromRotationMatrix(basis);
+
+  // shadow sits on whatever is below him
+  shadow.position.copy(up).multiplyScalar(R + floor + 0.04);
+  shadow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), up);
+  const ss = 1 / (1 + (height - floor) * 0.5); shadow.scale.setScalar(ss); shadow.material.opacity = 0.22 * ss;
+
+  // ---------- animation ----------
+  const P = hero.parts, F = P.flip;
+  runAmt += ((grounded ? mag : 0) - runAmt) * Math.min(1, 10 * dt);
+  runPhase += dt * (6 + 9 * mag) * (grounded ? 1 : 0) * (zapRun ? 1.6 : 1);
+  const sw = Math.sin(runPhase);
+  const zr = zapRun ? 1 : 0;
+  const t = simT / 1000;
+  const id = grounded ? (1 - runAmt) * (1 - sitAmt) : 0;
+  const sp = t * Math.PI * 2 / 1.4;
+  const sway = Math.sin(sp), bounce = Math.abs(Math.cos(sp));
+  const br = Math.sin(t * Math.PI * 2 / 3.2) * (0.6 + 0.4 * (grounded ? 1 - runAmt : 0));
+  P.torso.scale.set(1 + 0.07 * br, 1 + 0.05 * br, (1 + 0.08 * br) * P.torsoZ);
+  P.head.position.y = P.headY + 0.028 * br;
+  P.shL.position.y = P.shR.position.y = P.shY + 0.022 * br;
+  P.hipL.rotation.z = P.hipR.rotation.z = 0;
+  let flipX = null, flipY = null;
+
+  if (dancing) {
+    const ph = (idleTime - BD_START) % 7.8;
+    hero.body.position.y = 0; hero.body.rotation.set(0, 0, 0);
+    if (ph < 2.4) {
+      const w = ph * Math.PI * 2 / 0.8, s1 = Math.sin(w);
+      P.hipL.rotation.x = -0.7 * Math.max(0, s1); P.hipR.rotation.x = -0.7 * Math.max(0, -s1);
+      P.hipL.rotation.z = 0.25 * Math.max(0, s1); P.hipR.rotation.z = -0.25 * Math.max(0, -s1);
+      P.shL.rotation.x = -1.3 + 0.6 * s1; P.shR.rotation.x = -1.3 - 0.6 * s1;
+      P.shL.rotation.z = -0.6; P.shR.rotation.z = 0.6;
+      hero.body.position.y = 0.06 * Math.abs(Math.cos(w));
+      flipX = 0; flipY = 0.45 * s1;
+      if (face.expr !== 'smile' && !face.until) setExpr('smile', 0, simT);
+    } else if (ph < 2.8) {
+      const k = ease((ph - 2.4) / 0.4);
+      flipX = Math.PI * k; flipY = 0;
+      P.hipL.rotation.z = -0.6 * k; P.hipR.rotation.z = 0.6 * k;
+      P.shL.rotation.z = -0.38 - 1.0 * k; P.shR.rotation.z = 0.38 + 1.0 * k; P.shL.rotation.x = P.shR.rotation.x = 0;
+      P.hipL.rotation.x = P.hipR.rotation.x = 0;
+    } else if (ph < 6.0) {
+      const spin = (ph - 2.8) * (14 * Math.PI / 3.2);
+      flipX = Math.PI; flipY = spin;
+      P.hipL.rotation.z = -0.75 - 0.25 * Math.sin(spin * 0.5); P.hipR.rotation.z = 0.75 + 0.25 * Math.sin(spin * 0.5);
+      P.hipL.rotation.x = 0.45 * Math.sin(spin * 0.5); P.hipR.rotation.x = -0.45 * Math.sin(spin * 0.5);
+      P.shL.rotation.z = -1.5; P.shR.rotation.z = 1.5; P.shL.rotation.x = P.shR.rotation.x = 0;
+      if (face.expr !== 'laugh') setExpr('laugh', 0, simT);
+    } else if (ph < 7.4) {
+      flipX = Math.PI - 0.3; flipY = 0;
+      P.hipL.rotation.x = -1.3; P.hipR.rotation.z = 0.95; P.hipR.rotation.x = 0.2;
+      P.shL.rotation.z = -2.2; P.shR.rotation.z = 0.9; P.shL.rotation.x = 0; P.shR.rotation.x = 0.6;
+      if (face.expr !== 'wink') setExpr('wink', 0, simT);
+    } else {
+      const k = ease((ph - 7.4) / 0.4);
+      flipX = Math.PI - 0.3 + (Math.PI + 0.3) * k; flipY = 0;
+      P.hipL.rotation.x = -1.3 * (1 - k); P.hipR.rotation.z = 0.95 * (1 - k);
+      P.shL.rotation.z = -0.38 - 1.8 * (1 - k); P.shR.rotation.z = 0.38 + 0.5 * (1 - k);
+      P.shL.rotation.x = 0; P.shR.rotation.x = 0;
+    }
+  } else if (grounded) {
+    const legAmp = (0.85 + 0.25 * zr) * runAmt;
+    P.hipL.rotation.x = sw * legAmp - 0.35 * id * Math.max(0, -sway);
+    P.hipR.rotation.x = -sw * legAmp - 0.35 * id * Math.max(0, sway);
+    if (zr) { P.shL.rotation.x = 1.0 + sw * 0.25; P.shR.rotation.x = 1.0 - sw * 0.25; }
+    else {
+      P.shL.rotation.x = -sw * 0.9 * runAmt + 0.4 * id * Math.sin(sp + 1);
+      P.shR.rotation.x = sw * 0.9 * runAmt - 0.4 * id * Math.sin(sp + 1);
+    }
+    const flap = 0.1 * runAmt + 0.18 * id * bounce;
+    P.shL.rotation.z = -0.38 - flap; P.shR.rotation.z = 0.38 + flap;
+    hero.body.position.y = Math.abs(sw) * 0.09 * runAmt + 0.04 * id * bounce;
+    hero.body.rotation.x = (0.12 + 0.2 * zr) * runAmt;
+    hero.body.rotation.z = 0.09 * id * sway;
+    // sitting with his back against the collar, legs out in front
+    if (sitAmt > 0.001) {
+      const s = sitAmt;
+      P.hipL.rotation.x = lerp(P.hipL.rotation.x, -1.5, s); P.hipR.rotation.x = lerp(P.hipR.rotation.x, -1.42, s);
+      P.hipL.rotation.z = lerp(0, -0.12, s); P.hipR.rotation.z = lerp(0, 0.12, s);
+      P.shL.rotation.x = lerp(P.shL.rotation.x, 0.45, s); P.shR.rotation.x = lerp(P.shR.rotation.x, 0.45, s);
+      P.shL.rotation.z = lerp(P.shL.rotation.z, -0.62, s); P.shR.rotation.z = lerp(P.shR.rotation.z, 0.62, s);
+      hero.body.position.y = lerp(hero.body.position.y, -0.66, s);
+      hero.body.rotation.x = lerp(hero.body.rotation.x, -0.3, s);
+      hero.body.rotation.z = lerp(hero.body.rotation.z, 0, s);
+    }
+  } else if (flipT >= 0) {
+    flipT += dt;
+    const k = Math.min(1, flipT / FLIP_DUR), tuck = Math.sin(k * Math.PI);
+    flipX = Math.PI * 2 * ease(k); flipY = 0;
+    P.hipL.rotation.x = P.hipR.rotation.x = -1.5 * tuck;
+    P.shL.rotation.x = P.shR.rotation.x = -1.2 * tuck;
+    P.shL.rotation.z = -0.38 - 0.3 * tuck; P.shR.rotation.z = 0.38 + 0.3 * tuck;
+    hero.body.position.y = 0; hero.body.rotation.set(0, 0, 0);
+    if (k >= 1) { flipT = -1; flipX = 0; }
+  } else {
+    const k = Math.min(1, airT * 8), g = glideAmt;
+    // jump pose, blending into a glide pose (arms out like wings, legs trailing)
+    P.hipL.rotation.x = lerp(-0.9 * k, 0.35, g); P.hipR.rotation.x = lerp(0.35 * k, 0.5, g);
+    P.shL.rotation.x = lerp(-0.4 * k, 0, g); P.shR.rotation.x = lerp(-0.4 * k, 0, g);
+    P.shL.rotation.z = lerp(-0.38 - 1.6 * k, -1.5, g); P.shR.rotation.z = lerp(0.38 + 1.6 * k, 1.5, g);
+    hero.body.position.y = 0; hero.body.rotation.x = lerp(0.05, 0.35, g); hero.body.rotation.z = Math.sin(t * 3) * 0.08 * g;
+  }
+  if (flipX !== null) { F.rotation.x = flipX; F.rotation.y = flipY; }
+  else {
+    const kk = Math.min(1, 14 * dt);
+    F.rotation.x = wrapPi(F.rotation.x) * (1 - kk); F.rotation.y = wrapPi(F.rotation.y) * (1 - kk);
+  }
+  P.head.rotation.z = dancing ? 0 : Math.sin(runPhase * 0.5) * 0.05 * runAmt - 0.1 * id * Math.sin(sp - 0.5);
+  P.head.rotation.x = dancing ? 0 : -0.05 * id * bounce - 0.12 * sitAmt;
+
+  // hero blinking
+  if (simT > blinkAt) { blinkStart = simT; blinkAt = simT + (Math.random() < 0.2 ? 240 : 1800 + Math.random() * 3600); }
+  const bk = simT - blinkStart < 130 ? Math.sin(Math.PI * (simT - blinkStart) / 130) : 0;
+  P.eyes.forEach(e => e.scale.set(0.034 * (1 + 0.3 * bk), 0.048 * (1 - 0.88 * bk), 0.02));
+
+  // sticks mirror the input; his stick cap spins like a propeller while gliding
+  if (mag > 0.02) {
+    const inv = tmpQ.copy(hero.root.quaternion).invert();
+    const local = move.clone().applyQuaternion(inv);
+    const flipInv = new THREE.Quaternion().setFromEuler(F.rotation).invert();
+    const headInv = new THREE.Quaternion().setFromEuler(P.head.rotation).invert();
+    local.applyQuaternion(flipInv).applyQuaternion(headInv);
+    stickTarget.setFromAxisAngle(new THREE.Vector3(local.z, 0, -local.x).normalize(), 0.5 * mag);
+    const gx = move.x, gz = move.z, gl = Math.hypot(gx, gz);
+    if (gl > 0.05 && capH < 0) gStickTarget.setFromAxisAngle(new THREE.Vector3(gz / gl, 0, -gx / gl), 0.12 * mag * Math.min(1, gl * 2));
+    else gStickTarget.identity();
+  } else { stickTarget.identity(); gStickTarget.identity(); }
+  P.stick.quaternion.slerp(stickTarget, Math.min(1, 18 * dt));
+  gStick.quaternion.slerp(gStickTarget, Math.min(1, 5 * dt));
+  spinV += ((gliding ? 28 : 0) - spinV) * Math.min(1, 3 * dt);
+  P.spin.rotation.y += spinV * dt;
+
+  // nose squash when bounced on
+  if (noseBoing >= 0) {
+    noseBoing += dt; const k = noseBoing / 0.5;
+    const sq = k < 1 ? Math.sin(k * Math.PI * 3) * (1 - k) * 0.35 : 0;
+    pNose.scale.set(0.085 * HS * (1 + sq * 0.5), 0.12 * HS * (1 + sq * 0.5), 0.09 * HS * (1 - sq));
+    if (k >= 1) noseBoing = -1;
+  }
+
+  // electric spark trail
+  if (zapRun) {
+    sparkAcc += dt * (grounded ? 70 : 40);
+    const back = facing.clone().negate();
+    while (sparkAcc >= 1) {
+      sparkAcc -= 1;
+      const foot = (Math.random() < 0.5 ? P.hipL : P.hipR);
+      const fp = new THREE.Vector3(0, -0.75, 0); foot.localToWorld(fp);
+      fp.addScaledVector(back, Math.random() * 0.35).addScaledVector(up, 0.05);
+      emitSpark(fp, up, Math.random() < 0.25);
+      if (Math.random() < 0.12) {
+        const bp = pos.clone().addScaledVector(up, 0.5 + Math.random() * 0.9)
+          .add(new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(0.8));
+        emitSpark(bp, up, false);
+      }
+    }
+  } else sparkAcc = 0;
+  updateSparks(dt);
+  sun3.update(simT);
+  twinklers.forEach(g => g.scale.setScalar(g.userData.base * (1 + 0.15 * Math.sin(t * g.userData.sp + g.userData.ph))));
+
+  // giant face expressions
+  if (mode === 'intro') {
+    const e = INTRO_EXPR[Math.floor(simT / 1500) % INTRO_EXPR.length];
+    if (face.expr !== e) setExpr(e, 0, simT);
+  }
+  updateFace(simT);
+
+  // ---------- camera ----------
+  const camTarget = new THREE.Vector3().copy(pos).addScaledVector(up, 0.8).addScaledVector(camFwd, 0.8);
+  const desired = new THREE.Vector3().copy(up).multiplyScalar(R + 0.8 + Math.sin(camPitch) * camDist + height * 0.4)
+    .addScaledVector(camFwd, -Math.cos(camPitch) * camDist);
+  if (mode === 'intro') {
+    introPose(tmpV, tmpV2);
+    camera.position.copy(tmpV); camera.up.set(0, 1, 0); camera.lookAt(tmpV2);
+  } else if (mode === 'reveal') {
+    revealT += dt;
+    const T1 = 2.2, T2 = 3.2, T3 = 4.6;
+    if (revealT < T1) {          // pull back: the planet is his head, and there he is by the stick
+      const k = ease(revealT / T1);
+      camera.position.lerpVectors(A_POS, B_POS, k); camera.up.set(0, 1, 0);
+      camera.lookAt(tmpV.lerpVectors(A_LOOK, B_LOOK, k));
+    } else if (revealT < T2) {
+      camera.position.copy(B_POS); camera.up.set(0, 1, 0); camera.lookAt(B_LOOK);
+      if (face.expr !== 'laugh' && revealT > T1 + 0.2) setExpr('laugh', 1400, simT);
+    } else {                     // swoop in to him sitting there
+      const k = ease(Math.min(1, (revealT - T2) / (T3 - T2)));
+      camera.position.lerpVectors(B_POS, desired, k);
+      camera.up.set(0, 1, 0).lerp(up, k).normalize();
+      camera.lookAt(tmpV.lerpVectors(B_LOOK, camTarget, k));
+      if (k > 0.6) { controls = true; document.body.classList.remove('intro'); }
+      if (k >= 1) mode = 'play';
+    }
+  } else {
+    const k = Math.min(1, 7 * dt);
+    camera.position.lerp(desired, k);
+    camera.up.lerp(up, k).normalize();
+    camera.lookAt(camTarget);
+  }
+
+  // fade the giant stick cap only when the camera is underneath it
+  const cp = camera.position, under = Math.hypot(cp.x, cp.z) < CAP_RAD + 1 && cp.y > R * 0.8 && cp.y < R + CAP_TOP_H;
+  const op = under ? 0.3 : 1;
+  capMats.forEach(m => { m.opacity += (op - m.opacity) * Math.min(1, 8 * dt); });
+
+  // key light
+  const rightNow = new THREE.Vector3().copy(camFwd).cross(up);
+  if (mode === 'intro') { sun.position.set(6, 12, 30); sun.target.position.set(0, 0, R); }
+  else { sun.position.copy(pos).addScaledVector(up, 9).addScaledVector(rightNow, 4).addScaledVector(camFwd, -5); sun.target.position.copy(pos); }
+}
+capMats.forEach(m => { m.transparent = true; });
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  update(dt);
+  effect.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+update(0);
+requestAnimationFrame(frame);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+window.__debug = { input, touchVec, keys, hero, get mode() { return mode; } };
+</script>
+</body>
+</html>
