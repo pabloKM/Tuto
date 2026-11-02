@@ -21,5 +21,6 @@ A tiny 3D platformer made for phones. You play a little guy with an analog stick
 - Bounce off the giant nose to land on top of the stick.
 - Stand on the planet's eyes or mouth.
 - Stand still for a while.
+- Jump on a dinosaur's back.
 
 Built with [three.js](https://threejs.org/). Everything is in `index.html`.
