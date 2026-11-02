@@ -593,17 +593,15 @@ let mode = 'intro', revealT = 0, controls = false;
 const A_POS = new THREE.Vector3(), A_LOOK = new THREE.Vector3();
 const B_POS = new THREE.Vector3(0, R * 1.0, R * 3.4), B_LOOK = new THREE.Vector3(0, R * 0.72, 0);
 const INTRO_EXPR = ['smile', 'wink', 'laugh', 'shocked', 'frown', 'silly'];
-// close-up framed so the eyes sit ~2 inches below the top of the screen and the smile ~1 inch above the bottom
+// extreme close-up: frame just the eyes, nose and smile, filling the screen
 function introPose(pos, look) {
   const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const PPI = 145, H = innerHeight;                       // ~CSS px per inch on phones
-  const eyesTop = Math.min(2 * PPI / H, 0.42), smileBot = Math.min(PPI / H, 0.24);
-  const Ne = 1 - 2 * eyesTop, Nm = -1 + 2 * smileBot;    // target screen heights (NDC)
-  const e = 0.24 * R, m = -0.33 * R;                      // eye centre / smile bottom on the face
-  const ze = Math.sqrt(R * R - e * e - (0.106 * R) ** 2), zm = Math.sqrt(R * R - m * m);
-  const Zc = ((e - m) / tanH + Ne * ze - Nm * zm) / (Ne - Nm);
-  const cy = e - Ne * (Zc - ze) * tanH;
-  pos.set(0, cy, Zc); look.set(0, cy, 0);
+  const top = 0.315 * R, bot = -0.335 * R;     // top of the eyes .. bottom of the smile
+  const halfW = 0.165 * R;                     // outer edges of the eyes / ends of the smile
+  const cy = (top + bot) / 2, M = 1.06;        // small margin so nothing touches the edges
+  const halfH = (top - bot) / 2 * M;
+  const D = Math.max(halfH, halfW * M / camera.aspect) / tanH;
+  pos.set(0, cy, 0.96 * R + D); look.set(0, cy, 0);
 }
 function startReveal() {
   if (mode !== 'intro') return;
