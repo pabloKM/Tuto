@@ -23,4 +23,12 @@ A tiny 3D platformer made for phones. You play a little guy with an analog stick
 - Stand still for a while.
 - Jump on a dinosaur's back.
 
+## Also here: Stick Head — Garden State
+
+Stick Head in Hoboken, New Jersey: run up buildings, bounce off trees, talk to the locals, or load any real OpenStreetMap file with the 🗺 button.
+
+**Play it:** https://pablokm.github.io/Tuto/nj/
+
+Hoboken's layout is hand-built from the real street grid (approximate). Imported maps: © OpenStreetMap contributors (ODbL). It lives in the `nj/` folder.
+
 Built with [three.js](https://threejs.org/). Everything is in `index.html`.
