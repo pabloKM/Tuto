@@ -1371,10 +1371,15 @@ function mount(d) {
   up.copy(d.up); ortho(facing); camFwd.copy(facing);
   height = d.topH; vy = 0; grounded = true; usedFlip = false; flipT = -1; slide = null;
 }
-function dismount(jump) {
+let lastRide = null, remountAfter = 0;
+function dismount(jump, dir) {
   const d = riding; riding = null;
   d.state = DST.walk; d.local = false; d.relT = simT; d.timer = 0; d.walkAmt = 0;
   grounded = false; vy = jump ? JUMP_V * 1.1 : 0; airT = 0;
+  // hop clear of its back: the way the stick points, or off to the side
+  const out = dir && dir.lengthSq() > 0.01 ? dir.clone() : facing.clone().cross(up);
+  ortho(out); slide = { dir: out, speed: (d.radius + 0.6) * GRAV / (2 * Math.max(vy, 4)) };
+  lastRide = d; remountAfter = simT + 900;
 }
 const NOSE_OBS = { p: FACE_DIR, a: NOSE_AX + 0.08 };
 
@@ -1515,13 +1520,13 @@ function update(dt) {
   }
   // jump / double-jump flip / hop off a dinosaur
   if (input.jump && !heldBy) {
-    if (riding) dismount(true);
+    if (riding) dismount(true, mag > 0.1 ? move : null);
     else if (grounded) { vy = JUMP_V; grounded = false; usedFlip = false; }
     else if (!usedFlip && launchLeft <= 0 && !holding) { vy = FLIP_V; usedFlip = true; flipT = 0; setExpr('shocked', 900, simT); }
   }
   input.jump = false;
 
-  const canRide = d => d.state === DST.walk && !d.remote && !holding;
+  const canRide = d => d.state === DST.walk && !d.remote && !holding && !(d === lastRide && simT < remountAfter);
   const landOn = () => {
     if (dinoUnder && canRide(dinoUnder)) mount(dinoUnder);
     else if (dinoUnder) { height = floor; vy = 12.5; grounded = false; usedFlip = false; flipT = -1; airT = 0; dinoUnder.squash = 0; }  // someone's on it: bounce
