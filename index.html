@@ -249,8 +249,8 @@ const faceGeo = new THREE.SphereGeometry(R + 0.024, 72, 28, 0, Math.PI * 2, 0, 0
   const FW = 0.8 * R, uv = faceGeo.attributes.uv, ps = faceGeo.attributes.position;
   for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.5 + ps.getX(i) / (2 * FW), 0.5 + ps.getY(i) / (2 * FW));
 }
-const faceCanvas = document.createElement('canvas'); faceCanvas.width = faceCanvas.height = 512;
-const fctx = faceCanvas.getContext('2d');
+const faceCanvas = document.createElement('canvas'); faceCanvas.width = faceCanvas.height = 1024;
+const fctx = faceCanvas.getContext('2d'); fctx.scale(2, 2);   // drawn in 512-unit coordinates at 2x resolution
 const faceTex = new THREE.CanvasTexture(faceCanvas); faceTex.colorSpace = THREE.SRGBColorSpace; faceTex.anisotropy = 4;
 const faceMat = new THREE.MeshToonMaterial({ map: faceTex, gradientMap: ramp });
 faceMat.userData.outlineParameters = { visible: false };
@@ -307,7 +307,7 @@ function updateFace(now) {
   if (now > face.blinkAt) { face.blinkStart = now; face.blinkAt = now + (Math.random() < 0.2 ? 260 : 1800 + Math.random() * 3200); }
   const b = now - face.blinkStart < 140 ? Math.sin(Math.PI * (now - face.blinkStart) / 140) : 0;
   const c = face.cl, anyC = c.l || c.r || c.m;
-  const key = face.expr + '|' + Math.round(b * 4) + (face.expr === 'laugh' && !anyC ? '|' + ((now / 40) | 0) : '') + '|' + (+c.l) + (+c.r) + (+c.m);
+  const key = face.expr + '|' + Math.round(b * 4) + (face.expr === 'laugh' && !anyC ? '|' + ((now / 70) | 0) : '') + '|' + (+c.l) + (+c.r) + (+c.m);
   if (key !== face.key) { face.key = key; drawFace(face.expr, b, now, c); }
 }
 drawFace('smile', 0, 0);
@@ -570,10 +570,17 @@ cvs.addEventListener('wheel', e => { e.preventDefault(); camDist = THREE.MathUti
 
 
 // ---------- low-poly dinosaurs roaming the head ----------
-// faceted look comes from flatShading; vertices are merged so the black outline hull stays seamless
+// each part is drawn twice: a faceted copy (per-face normals = low-poly look, no outline)
+// and an invisible smooth shell that only feeds the black outline, so the outline has no cracks
 const lpMats = {};
-const lpMat = c => lpMats[c] || (lpMats[c] = new THREE.MeshToonMaterial({ color: c, gradientMap: ramp, flatShading: true }));
+const lpMat = c => {
+  if (!lpMats[c]) { lpMats[c] = new THREE.MeshToonMaterial({ color: c, gradientMap: ramp }); lpMats[c].userData.outlineParameters = { visible: false }; }
+  return lpMats[c];
+};
+const HULL_M = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
 function lp(geo) { geo.deleteAttribute('normal'); geo.deleteAttribute('uv'); const g = mergeVertices(geo); g.computeVertexNormals(); return g; }
+const facetCache = new WeakMap();
+function facet(g) { if (!facetCache.has(g)) { const f = g.toNonIndexed(); f.computeVertexNormals(); facetCache.set(g, f); } return facetCache.get(g); }
 const LP = {
   ico: (d = 1) => lp(new THREE.IcosahedronGeometry(1, d)),
   cyl: (rt, rb, h, n = 6) => lp(new THREE.CylinderGeometry(rt, rb, h, n)),
@@ -583,7 +590,8 @@ const LP = {
 };
 const EYE_M = toon(COL.ink, false);
 function part(geo, color, parent, pos = [0, 0, 0], scl = null, rot = null, mat = null) {
-  const m = new THREE.Mesh(geo, mat || lpMat(color));
+  const m = new THREE.Mesh(facet(geo), mat || lpMat(color));
+  m.add(new THREE.Mesh(geo, HULL_M));
   m.position.set(...pos); if (scl) m.scale.set(...scl); if (rot) m.rotation.set(...rot);
   parent.add(m); return m;
 }
@@ -594,9 +602,11 @@ function dLeg(parent, x, y, z, len, r, color, foot) {
   part(LP.box(r * 2.3, r * 0.9, r * 2.8), foot, pv, [0, -len + r * 0.4, r * 0.4]);
   return pv;
 }
-function dEyes(head, x, y, z, s = 0.06) {
+const EYE_W = toon(0xffffff, false), EYE_GEO = new THREE.SphereGeometry(1, 12, 10);
+function dEyes(head, x, y, z, s = 0.06) {   // white eye + black pupil, looking slightly forward
   for (const sx of [-1, 1]) {
-    const e = new THREE.Mesh(LP.ico(0), EYE_M); e.position.set(x * sx, y, z); e.scale.set(s, s * 1.25, s); head.add(e);
+    const w = new THREE.Mesh(EYE_GEO, EYE_W); w.position.set(x * sx, y, z); w.scale.set(s * 1.5, s * 1.8, s * 1.3); head.add(w);
+    const pu = new THREE.Mesh(EYE_GEO, EYE_M); pu.position.set(x * sx + sx * s * 0.25, y, z + s * 0.75); pu.scale.set(s * 0.75, s * 1.0, s * 0.7); head.add(pu);
   }
 }
 function makeBronto() {
@@ -609,25 +619,30 @@ function makeBronto() {
   part(LP.cyl(0.13, 0.22, 1.5), c, neck, [0, 0.72, 0]);
   const head = pivot(neck, [0, 1.48, 0.02], [-0.5, 0, 0]);
   part(LP.ico(1), c, head, [0, 0.02, 0.12], [0.24, 0.2, 0.36]);
-  dEyes(head, 0.15, 0.1, 0.24, 0.045);
+  dEyes(head, 0.16, 0.1, 0.26, 0.055);
   const tail = pivot(body, [0, 1.2, -0.95], [0.25, 0, 0]);
   part(LP.cone(0.3, 1.7), c, tail, [0, 0, -0.82], null, [-Math.PI / 2, 0, 0]);
   return { root, body, legs, tail, head, neck, kind: 'bronto', radius: 1.05, topH: 1.72, speed: 0.75, bob: 0.03 };
 }
 function makeRex() {
   const c = 0x9B7FD4, b = 0xE9DDFF, root = new THREE.Group(), body = pivot(root, [0, 0, 0]);
-  part(LP.ico(1), c, body, [0, 1.25, 0], [0.5, 0.58, 0.82], [-0.2, 0, 0]);
-  part(LP.ico(0), b, body, [0, 1.12, 0.32], [0.34, 0.36, 0.42], [-0.2, 0, 0]);
-  const legs = [dLeg(body, -0.3, 1.05, -0.05, 0.95, 0.2, c, c), dLeg(body, 0.3, 1.05, -0.05, 0.95, 0.2, c, c)];
-  for (const sx of [-1, 1]) part(LP.cyl(0.04, 0.05, 0.3, 5), c, body, [0.3 * sx, 1.3, 0.62], null, [1.1, 0, 0]);
-  const head = pivot(body, [0, 1.72, 0.55]);
-  part(LP.box(0.5, 0.42, 0.78), c, head, [0, 0.08, 0.3]);
-  for (let i = 0; i < 4; i++) part(LP.cone(0.035, 0.12, 4), 0xffffff, head, [-0.15 + i * 0.1, -0.16, 0.58], null, [Math.PI, 0, 0]);
-  const jaw = pivot(head, [0, -0.12, 0.0]);
-  part(LP.box(0.44, 0.13, 0.66), c, jaw, [0, -0.06, 0.32]);
-  dEyes(head, 0.2, 0.2, 0.42, 0.055);
-  const tail = pivot(body, [0, 1.3, -0.72], [0.15, 0, 0]);
-  part(LP.cone(0.32, 1.7), c, tail, [0, 0, -0.82], null, [-Math.PI / 2, 0, 0]);
+  part(LP.ico(1), c, body, [0, 1.25, 0], [0.5, 0.6, 0.76], [-0.3, 0, 0]);
+  part(LP.ico(1), b, body, [0, 1.12, 0.3], [0.34, 0.42, 0.4], [-0.3, 0, 0]);
+  const legs = [dLeg(body, -0.3, 1.05, -0.08, 0.95, 0.2, c, c), dLeg(body, 0.3, 1.05, -0.08, 0.95, 0.2, c, c)];
+  for (const sx of [-1, 1]) {
+    const arm = pivot(body, [0.28 * sx, 1.38, 0.5], [1.0, 0, -0.2 * sx]);
+    part(LP.cyl(0.045, 0.055, 0.28, 5), c, arm, [0, -0.14, 0]);
+    part(LP.cone(0.03, 0.08, 4), 0xffffff, arm, [0, -0.3, 0.02], null, [Math.PI, 0, 0]);
+  }
+  const head = pivot(body, [0, 1.78, 0.42]);
+  part(LP.ico(1), c, head, [0, 0.14, 0.3], [0.36, 0.3, 0.52]);             // skull + snout
+  part(LP.ico(0), c, head, [0, 0.36, 0.2], [0.26, 0.1, 0.22]);             // brow ridge
+  for (let i = 0; i < 5; i++) part(LP.cone(0.035, 0.12, 4), 0xffffff, head, [-0.2 + i * 0.1, -0.06, 0.5 + 0.08 * Math.cos((i - 2) * 0.7)], null, [Math.PI, 0, 0]);
+  const jaw = pivot(head, [0, -0.02, 0.0]);
+  part(LP.ico(1), b, jaw, [0, -0.1, 0.32], [0.3, 0.11, 0.42]);
+  dEyes(head, 0.24, 0.3, 0.38, 0.06);
+  const tail = pivot(body, [0, 1.25, -0.7], [0.1, 0, 0]);
+  part(LP.cone(0.34, 1.8), c, tail, [0, 0, -0.85], null, [-Math.PI / 2, 0, 0]);
   return { root, body, legs, tail, head, jaw, kind: 'rex', radius: 0.7, topH: 1.8, speed: 1.1, bob: 0.06 };
 }
 function makeTrike() {
@@ -637,10 +652,11 @@ function makeTrike() {
   for (const sz of [1, -1]) for (const sx of [-1, 1]) legs.push(dLeg(body, 0.36 * sx, 0.55, 0.5 * sz, 0.5, 0.15, c, c));
   const head = pivot(body, [0, 0.85, 0.85]);
   part(LP.ico(1), c, head, [0, 0, 0.22], [0.3, 0.27, 0.4]);
-  part(LP.cyl(0.58, 0.58, 0.07, 7), f, head, [0, 0.22, 0.0], null, [-1.15, 0, 0]);
+  part(LP.cyl(0.55, 0.55, 0.07, 8), f, head, [0, 0.3, 0.0], null, [Math.PI / 2 - 0.45, 0, 0]);
+  for (let i = 0; i < 7; i++) { const a = -1.35 + i * 0.45; part(LP.cone(0.06, 0.16, 4), f, head, [Math.sin(a) * 0.55, 0.3 + Math.cos(a) * 0.5, -0.05 - Math.cos(a) * 0.12], null, [-0.45, 0, -a]); }
   for (const sx of [-1, 1]) part(LP.cone(0.06, 0.45, 5), 0xffffff, head, [0.14 * sx, 0.25, 0.38], null, [1.15, 0, 0]);
   part(LP.cone(0.05, 0.2, 5), 0xffffff, head, [0, 0.12, 0.6], null, [1.3, 0, 0]);
-  dEyes(head, 0.17, 0.1, 0.38, 0.045);
+  dEyes(head, 0.19, 0.12, 0.36, 0.055);
   const tail = pivot(body, [0, 0.8, -0.85], [0.2, 0, 0]);
   part(LP.cone(0.22, 0.8), c, tail, [0, 0, -0.38], null, [-Math.PI / 2, 0, 0]);
   return { root, body, legs, tail, head, kind: 'trike', radius: 0.85, topH: 1.25, speed: 0.95, bob: 0.04 };
@@ -656,7 +672,7 @@ function makeStego() {
   for (const sz of [1, -1]) for (const sx of [-1, 1]) legs.push(dLeg(body, 0.34 * sx, sz > 0 ? 0.6 : 0.72, 0.55 * sz, sz > 0 ? 0.55 : 0.67, 0.15, c, c));
   const head = pivot(body, [0, 0.72, 1.0]);
   part(LP.ico(1), c, head, [0, 0, 0.18], [0.2, 0.17, 0.3]);
-  dEyes(head, 0.11, 0.08, 0.3, 0.04);
+  dEyes(head, 0.13, 0.08, 0.3, 0.05);
   const tail = pivot(body, [0, 1.0, -0.95], [0.3, 0, 0]);
   part(LP.cone(0.25, 1.2), c, tail, [0, 0, -0.58], null, [-Math.PI / 2, 0, 0]);
   for (const sx of [-1, 1]) part(LP.cone(0.05, 0.38, 4), 0xffffff, tail, [0.14 * sx, 0.08, -1.0], null, [0, 0, -sx * 1.1]);
