@@ -13,8 +13,14 @@ A tiny 3D platformer made for phones. You play a little guy with an analog stick
 | Jump / flip | ⬆ button (press again in the air to flip) | Space |
 | Glide | Hold ⬆ while falling | Hold Space |
 | Electric run | ⚡ button (tap to toggle) | Hold Shift |
+| Pick up / throw | ✋ button (dinosaurs or other players) | F or Enter |
+| Ride a dinosaur | Land on its back · jump to hop off | |
 | Look around | Drag anywhere else | Q / E |
 | Zoom | Pinch | Mouse wheel |
+
+## Play together
+
+Tap the two-people button (top right), then **Start a room** and send the 4-letter code or invite link to a friend. They tap **Join** (or just open the link) and you share the same planet: up to four players, each Tuto in their own colour. Phones connect directly to each other through PeerJS; if a pair can't connect on mobile data, try Wi-Fi.
 
 ## Things to try
 
