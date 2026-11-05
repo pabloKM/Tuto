@@ -738,7 +738,7 @@ const DINO_PLAN = [[makeBronto, 1.0], [makeRex, 0.9], [makeTrike, 1.0], [makeSte
 const SIT_DIR_GUESS = new THREE.Vector3(0, Math.cos(0.47), Math.sin(0.47));
 // what a dinosaur is doing: wandering, held overhead, flying after a throw, being ridden, seeing stars
 const DST = { walk: 0, held: 1, thrown: 2, ridden: 3, dizzy: 4 };
-const dizzyStarMat = new THREE.SpriteMaterial({ color: 0xFFE94A, transparent: true, depthWrite: false });
+const dizzyStarMat = new THREE.SpriteMaterial({ map: sparkTex[1], color: 0xFFE94A, transparent: true, depthWrite: false });   // outlined 4-point star
 for (const [make, sc] of DINO_PLAN) {
   const d = make();
   // pivot at mid-height so a thrown dinosaur tumbles around its middle, not its feet
