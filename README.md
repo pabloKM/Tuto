@@ -46,3 +46,9 @@ Stick Head in your own room, through your phone's camera. Drop him on the floor,
 On Android Chrome he's tracked on your real floor (WebXR), so you can walk around him. On iPhone and other browsers it uses the camera plus your phone's tilt, so he stays put while you look around but doesn't follow you if you walk. It lives in the `ar/` folder.
 
 Built with [three.js](https://threejs.org/). Everything is in `index.html`.
+
+## Sid Dash
+
+A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swipe up to jump & flip, and collect all 3 stars to reach the next stage.
+
+**Play it:** https://pablokm.github.io/Tuto/sid-dash/
