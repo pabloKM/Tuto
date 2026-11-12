@@ -96,17 +96,18 @@
   #mkH { display:flex; gap:2px; } #mkH button { width:28px; height:34px; border:3px solid #161216; border-radius:10px; background:#fff; font:inherit; font-size:15px; padding:0; box-shadow:2px 3px 0 #161216; color:#161216; }
   #mkH button:active { background:#FFD23C; transform:translate(1px,2px); box-shadow:1px 1px 0 #161216; }
   #mkBuild { position:absolute; left:50%; top:14px; transform:translateX(-50%); font:inherit; font-size:20px; padding:4px 16px; background:#FFD23C; border:3px solid #161216; border-radius:14px; box-shadow:2px 3px 0 #161216; color:#161216; }
-  #mkToast { position:absolute; left:50%; bottom:calc(150px + env(safe-area-inset-bottom)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
-    padding:4px 16px; opacity:0; transition:opacity .25s; pointer-events:none !important; text-align:center; max-width:80vw; }
+  #mkToast { position:absolute; left:50%; top:calc(12px + env(safe-area-inset-top)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
+    padding:4px 16px; opacity:0; transition:opacity .25s; pointer-events:none !important; text-align:center; max-width:50vw; z-index:3; }
+  body.mk-explore #mkToast { top:calc(64px + env(safe-area-inset-top)); max-width:80vw; }
   #mkCross { position:absolute; left:50%; top:50%; width:30px; height:30px; margin:-15px 0 0 -15px; display:none; pointer-events:none !important; }
   #mkCross::before, #mkCross::after { content:''; position:absolute; background:#161216; box-shadow:0 0 0 2px #fff; }
   #mkCross::before { left:13px; top:0; width:4px; height:30px; } #mkCross::after { top:13px; left:0; height:4px; width:30px; }
   body.mk-fp #mkCross { display:block; } body.mk-fp.mk-explore #mkCross { display:none; }
   #mkLook.on { background:#7ED6A8; }
   body.mk-explore #mkTools, body.mk-explore #mkChip { display:none; } body:not(.mk-explore) #mkBuild { display:none; }
-  #mkPanel { position:fixed; inset:0; z-index:40; background:rgba(22,18,22,.45); display:flex; align-items:center; justify-content:center; }
+  #mkPanel { position:fixed; inset:0; z-index:40; background:rgba(22,18,22,.45); display:flex; align-items:flex-end; justify-content:center; padding-bottom:calc(14px + env(safe-area-inset-bottom)); }
   #mkPanel[hidden] { display:none; }
-  #mkPanel .mp-card { max-height:88vh; overflow:auto; }
+  #mkPanel .mp-card { max-height:80vh; overflow:auto; }
   #mkSw { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin:2px 0 10px; }
   #mkSw i { width:30px; height:30px; border-radius:50%; border:3px solid #161216; display:block; }
   #mkSw i.on { box-shadow:0 0 0 3px #fff, 0 0 0 6px #161216; }
@@ -134,7 +135,7 @@
   #mcDepth { position:absolute; right:10px; bottom:34px; font:inherit; font-size:15px; padding:0 8px; border:2px solid #161216; border-radius:10px; background:rgba(255,255,255,.85); color:#161216; }
   #mcBar { position:absolute; left:0; right:0; bottom:calc(12px + env(safe-area-inset-bottom)); display:flex; gap:7px; justify-content:center; }
   #mcRecB { background:#FF6B5B; } #mcRecB.on { background:#FFE45E; }
-  #mcToast { position:absolute; left:50%; bottom:calc(86px + env(safe-area-inset-bottom)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
+  #mcToast { position:absolute; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
     padding:4px 16px; opacity:0; transition:opacity .25s; pointer-events:none !important; text-align:center; max-width:80vw; }
   #mcPanel { position:fixed; inset:0; z-index:40; background:rgba(22,18,22,.45); display:flex; align-items:center; justify-content:center; }
   #mcPanel[hidden] { display:none; }
@@ -213,6 +214,7 @@
     <div id="mkH"><button id="mkUp" aria-label="Raise the point">▲</button><button id="mkDn" aria-label="Lower the point">▼</button></div>
     <button class="mkb" id="mkLine" aria-label="Draw a line between points"><b>╱</b><small>Line</small></button>
     <button class="mkb" id="mkFill" aria-label="Fill the lines into a solid plane"><b>▰</b><small>Plane</small></button>
+    <button class="mkb" id="mkAxis" aria-label="Which way dragging moves things"><b>⇄</b><small>Floor</small></button>
     <button class="mkb" id="mkUndo" aria-label="Undo"><b>↶</b><small>Undo</small></button>
     <button class="mkb" id="mkDel" aria-label="Delete the thing by the pink dot"><b>✕</b><small>Delete</small></button>
     <button class="mkb" id="mkMenu" aria-label="Colours, save and export"><b>☰</b><small>More</small></button>
@@ -755,7 +757,7 @@ cvs.addEventListener('pointerdown', e => {
 });
 cvs.addEventListener('pointermove', e => {
   const p = camPtrs.get(e.pointerId); if (!p) return;
-  if (camPtrs.size === 1) { orbitDelta += e.clientX - p.x; pitchDelta += e.clientY - p.y; }
+  if (camPtrs.size === 1 && !(typeof MK !== 'undefined' && MK.drag)) { orbitDelta += e.clientX - p.x; pitchDelta += e.clientY - p.y; }
   p.x = e.clientX; p.y = e.clientY;
   if (camPtrs.size >= 2) {
     const d = pinchDist();
@@ -2497,6 +2499,46 @@ function mkTap(x, y) {
   MK.sel = MK.sel === best.id ? null : best.id; mkRebuild();
   mkToast(MK.sel ? 'Point selected. Line starts from it, Delete removes it' : 'Deselected');
 }
+// hold a point or a line, then drag it to reshape the build
+MK.drag = null; MK.dragV = false;
+mkBtn('mkAxis', () => { MK.dragV = !MK.dragV; mkEl('mkAxis').querySelector('small').textContent = MK.dragV ? 'Wall' : 'Floor'; mkToast(MK.dragV ? 'Dragging moves things up and down' : 'Dragging slides things on the floor'); });
+const mkScr = v => { const q = v.clone().project(MK.cam); return q.z > 1 || q.z < -1 ? null : { x: (q.x * 0.5 + 0.5) * innerWidth, y: (-q.y * 0.5 + 0.5) * innerHeight }; };
+function mkPickAt(x, y) {
+  let best = null, bd = 34;
+  for (const p of MK.data.points) { const a = mkScr(new THREE.Vector3(...p.p)); if (!a) continue; const d = Math.hypot(a.x - x, a.y - y); if (d < bd) { bd = d; best = { kind: 'point', ids: [p.id] }; } }
+  if (best) return best; bd = 24;
+  for (const [i, j] of MK.data.edges) {
+    const A = mkById(i), B = mkById(j); if (!A || !B) continue;
+    const a = mkScr(new THREE.Vector3(...A.p)), b = mkScr(new THREE.Vector3(...B.p)); if (!a || !b) continue;
+    const dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L));
+    const d = Math.hypot(a.x + dx * t - x, a.y + dy * t - y); if (d < bd) { bd = d; best = { kind: 'line', ids: [i, j] }; }
+  }
+  return best;
+}
+const mkDragHit = (x, y, plane) => { const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1), MK.cam); const h = new THREE.Vector3(); return rc.ray.intersectPlane(plane, h) ? h : null; };
+let mkHoldT = 0;
+function mkDragStart(x, y) {
+  if (MK.explore || modeKind !== 'maker' || MK.chain.length) return;
+  const t = mkPickAt(x, y); if (!t) return;
+  const pts = t.ids.map(mkById); const c = new THREE.Vector3(); pts.forEach(q => c.add(new THREE.Vector3(...q.p))); c.divideScalar(pts.length);
+  const n = MK.dragV ? MK.cam.getWorldDirection(new THREE.Vector3()).setY(0).normalize().negate() : new THREE.Vector3(0, 1, 0);
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, c), h0 = mkDragHit(x, y, plane); if (!h0) return;
+  mkPush(); MK.drag = { t, plane, h0, start: pts.map(q => [...q.p]) }; mkTapDown = null;
+  if (t.kind === 'point') MK.sel = t.ids[0]; mkRebuild();
+  try { navigator.vibrate && navigator.vibrate(18); } catch (_) { }
+  mkToast(t.kind === 'point' ? 'Drag the point' : 'Drag the line');
+}
+function mkDragMove(x, y) {
+  const D = MK.drag; if (!D) return; const h = mkDragHit(x, y, D.plane); if (!h) return;
+  const d = h.clone().sub(D.h0), sd = new THREE.Vector3(snapTo(d.x), snapTo(d.y), snapTo(d.z));
+  const dy = Math.max(sd.y, -Math.min(...D.start.map(q => q[1])));   // never below the ground
+  D.t.ids.forEach((id, k) => { const q = mkById(id); q.p = [D.start[k][0] + sd.x, D.start[k][1] + dy, D.start[k][2] + sd.z]; });
+  mkRebuild();
+}
+function mkDragEnd() { if (!MK.drag) return; MK.drag = null; MK.sel = null; mkCommit(); }
+cvs.addEventListener('pointerdown', e => { clearTimeout(mkHoldT); if (modeKind === 'maker' && camPtrs.size === 1) { const x = e.clientX, y = e.clientY; mkHoldT = setTimeout(() => { if (mkTapDown && Math.hypot(mkTapDown.x - x, mkTapDown.y - y) < 12) mkDragStart(x, y); }, 380); } });
+cvs.addEventListener('pointermove', e => { if (MK.drag) mkDragMove(e.clientX, e.clientY); });
+for (const ev of ['pointerup', 'pointercancel']) cvs.addEventListener(ev, () => { clearTimeout(mkHoldT); mkDragEnd(); });
 let mkTapDown = null;
 cvs.addEventListener('pointerdown', e => { mkTapDown = modeKind === 'maker' && camPtrs.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
 cvs.addEventListener('pointermove', e => { if (mkTapDown && Math.hypot(e.clientX - mkTapDown.x, e.clientY - mkTapDown.y) > 12) mkTapDown = null; });

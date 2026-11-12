@@ -69,3 +69,8 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 ### Tuto Maker: first person + touch select
 - Tap a point to select it (cyan); Line / Delete then use it. While drawing a line, tapping a point links it.
 - Hold **Look** to see through Tuto's eyes: the stick aims the camera, ▲▼ set distance, height follows where he looks. Quick-tap Look to latch it on.
+
+### Tuto Maker: reshaping
+- Hold a point or a line for a moment, then drag to move it (snaps to the grid, planes follow). Undo reverts it.
+- The ⇄ button switches dragging between **Floor** (slide on the ground) and **Wall** (move up/down).
+- Messages now pop up at the top of the screen, and the menu panel slides up from the bottom.
