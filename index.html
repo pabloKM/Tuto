@@ -1199,6 +1199,17 @@ function poseCharacter(ch, s, dt) {
     P.shL.rotation.z = L(P.shL.rotation.z, L(-0.3, -2.85, hg), k); P.shR.rotation.z = L(P.shR.rotation.z, L(0.3, 2.85, hg), k);
     body.position.y = L(body.position.y, -0.55 * sq, k); body.rotation.x = L(body.rotation.x, 0.3 * sq, k); body.rotation.z = L(body.rotation.z, 0.06 * Math.sin(t2 * 1.7) * hg, k);
   }
+  if (s.shAmt > 0.01) {           // the jump-shot form: coil, set the ball high in an L, extend, flick, hold the follow-through
+    const a = s.shAmt, ld = s.shLoad, ex = s.shExt, L = (x, y, w) => x + (y - x) * w, ss = Math.min(1, Math.max(0, ex));
+    P.shL.rotation.x = L(P.shL.rotation.x, L(-1.5, -2.35, ss), a); P.shL.rotation.z = L(P.shL.rotation.z, L(-0.42, -0.6, ss), a);   // elbow flared so the arm clears Tuto's big head
+   
+    P.elL.rotation.x = L(P.elL.rotation.x, L(-1.0, -0.12 - 0.3 * Math.sin(Math.min(1, ss) * Math.PI), ss), a);        // L-shape, then the wrist flick
+    P.shR.rotation.x = L(P.shR.rotation.x, L(-1.5, -0.4, ss), a); P.shR.rotation.z = L(P.shR.rotation.z, L(-0.45, 0.35, ss), a);   // guide hand cups the ball, then falls away
+    P.elR.rotation.x = L(P.elR.rotation.x, L(-1.0, -0.2, ss), a);
+    P.hipL.rotation.x = L(P.hipL.rotation.x, L(-0.5 * ld, 0.08, ss), a * 0.85); P.hipR.rotation.x = L(P.hipR.rotation.x, L(-0.35 * ld, 0.55, ss), a * 0.85);   // coil, then extend with the trailing leg kicked back
+    body.position.y = L(body.position.y, -0.4 * ld * (1 - ss), a); body.rotation.x = L(body.rotation.x, 0.12 * ld * (1 - ss) - 0.14 * ss, a);
+    if (P.head) P.head.rotation.x = L(P.head.rotation.x, -0.12 * ss, a);
+  }
   limbBends(P, runAmt);
   if (flipX !== null) { F.rotation.x = flipX; F.rotation.y = flipY; }
   else {
@@ -2382,11 +2393,12 @@ function startMaker() {
   MK.saved = { camDist, DIST_MIN, DIST_MAX };
   camDist = 18; DIST_MIN = 7; DIST_MAX = 90;
   MK.pos.set(0, 0, 0); MK.face = 0; MK.yaw = Math.PI; MK.pitch = 0.5; MK.vy = 0; MK.grounded = true; MK.flipT = -1; MK.ch = 0; MK.chain = [];
+  MK.ball = null; MK.shot = null; MK.charging = false; MK.pbDown = 0; MK.shAmt = MK.shLoad = MK.shExt = 0; if (MK.ballMesh) MK.ballMesh.visible = false;
   MK.gr = null; mkEl('mkGrab').classList.remove('on'); MK.glideAmt = 0; MK.gliding = false;
   MK.camT.set(0, 2.2, 0); MK.fpLock = false; MK.sel = null; mkSetFP(false); mkEl('mkLook').classList.remove('on'); MK.explore = false; document.body.classList.remove('mk-explore');
   MK.rect = Object.assign({}, MK.tgt);
   mkRebuild(); mkApplyRect(); mkEl('mkPanel').hidden = true;
-  if (!MK.hinted) { MK.hinted = true; setTimeout(() => mkToast('● drops a point 3 steps ahead of Tuto'), 900); }
+  if (!MK.hinted) { MK.hinted = true; setTimeout(() => mkToast('Tap ● to drop a point. Hold it to shoot one!'), 900); }
 }
 function stopMaker() {
   mkSetFP(false); mkAutosave(); mkEl('mkPanel').hidden = true;
@@ -2478,6 +2490,91 @@ function mkHeadHit(P, reach) {
   mkSolidRay.ray.origin.set(P.x, P.y + HEADH, P.z); mkSolidRay.ray.direction.set(0, 1, 0); mkSolidRay.near = 0; mkSolidRay.far = reach;
   const hs = mkSolidRay.intersectObjects(MK.solids, false); return hs.length ? hs[0].point.y : null;
 }
+// ---- shooting points: hold the Point button to wind up, let go to shoot the point through the air in an arc.
+// Any other move or button press freezes it where it is and it becomes a real point.
+Object.assign(MK, { pbDown: 0, charging: false, chargeT: 0, shot: null, ball: null, shAmt: 0, shLoad: 0, shExt: 0 });
+const SH_G = 30, mkBallMat = new THREE.MeshBasicMaterial({ color: 0xFF3D7F }); noOl(mkBallMat);
+const mkSS = (a, b, x) => { const u = Math.min(1, Math.max(0, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+const mkHandBox = new THREE.Box3();
+function mkReadHand() {   // where the shooting hand really is (after posing)
+  const root = MK.hero.root; root.updateMatrixWorld(true); mkHandBox.setFromObject(MK.hero.parts.elL);
+  mkHandBox.getCenter(MK.handPos || (MK.handPos = new THREE.Vector3())); MK.handPos.y = mkHandBox.max.y;
+}
+function mkHandPos(ext) {
+  if (MK.handPos && (MK.charging || MK.shot)) { const f = MK.face; return MK.handPos.clone().add(new THREE.Vector3(Math.sin(f) * 0.12, 0.38, Math.cos(f) * 0.12)); }
+  const f = MK.face, fx = Math.sin(f), fz = Math.cos(f), rx = -Math.cos(f), rz = Math.sin(f), P = MK.pos, o = new THREE.Vector3();
+  const up = 2.05 + 0.6 * ext, fw = 1.1 + 0.15 * ext, rt = 0.3 * (1 - ext);
+  return o.set(P.x + fx * fw + rx * rt, P.y + up, P.z + fz * fw + rz * rt);
+}
+function mkShotVel(power) {
+  const sp = 14 + 20 * power, dir = MK.fp ? mkAimDir() : new THREE.Vector3(Math.sin(MK.face) * Math.cos(0.95), Math.sin(0.95), Math.cos(MK.face) * Math.cos(0.95));
+  return dir.multiplyScalar(sp);
+}
+function mkBallMesh() {
+  if (!MK.ballMesh) { MK.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), mkBallMat); MK.gU.add(MK.ballMesh); }
+  return MK.ballMesh;
+}
+function mkBallFreeze(why) {
+  const b = MK.ball; if (!b) return; MK.ball = null; mkBallMesh().visible = false;
+  const x = snapTo(b.pos.x), y = Math.max(0, snapTo(b.pos.y)), z = snapTo(b.pos.z);
+  if (MK.data.points.some(q => Math.hypot(q.p[0] - x, q.p[1] - y, q.p[2] - z) < 0.05)) return mkToast('A point is already there');
+  mkPush(); MK.data.points.push({ id: MK.data.next++, p: [x, y, z] }); mkCommit(); mkToast(why || 'Point frozen in the air');
+}
+function mkShootRelease() {
+  const wasCharging = MK.charging; MK.charging = false;
+  if (!wasCharging) return;
+  const power = Math.min(1, Math.max(0, (MK.chargeT - 0.22) / 1.0));
+  MK.shot = { t: 0, rel: false, power };
+  if (MK.grounded && !MK.gr) { MK.vy = 13; MK.grounded = false; MK.usedFlip = false; MK.airT = 0; }   // hop into the jumper
+}
+function mkShotStep(dt, rawMag) {
+  const B = MK;
+  // freezing: any new input after the launch
+  if (B.ball) {
+    if (rawMag <= 0.1) B.ball.rest = true; else if (B.ball.rest) mkBallFreeze();
+  }
+  if (B.ball && input.jump) mkBallFreeze();
+  // winding up
+  if (B.pbDown && !B.charging && !B.shot && !B.gr && performance.now() - B.pbDown > 220) { B.charging = true; B.chargeT = 0.22; }
+  if (B.charging) B.chargeT += dt;
+  const preview = B.charging && !B.explore;
+  // timeline of the shot
+  if (B.shot) {
+    const S = B.shot; S.t += dt;
+    B.shAmt = S.t < 0.55 ? 1 : Math.max(0, 1 - (S.t - 0.55) / 0.25);
+    B.shLoad = 1 - mkSS(0, 0.16, S.t); B.shExt = mkSS(0.04, 0.2, S.t);
+    if (!S.rel && S.t >= 0.16) {
+      S.rel = true; const pos = mkHandPos(1), vel = mkShotVel(S.power); mkBallFreeze();
+      B.ball = { pos, vel, age: 0, rest: rawMag <= 0.1 }; mkBallMesh().visible = true;
+    }
+    if (S.t >= 0.8) B.shot = null;
+  } else if (B.charging) { B.shAmt = Math.min(1, B.shAmt + dt * 8); B.shLoad = Math.min(1, B.shLoad + dt * 5); B.shExt = Math.max(0, B.shExt - dt * 8); }
+  else { B.shAmt = Math.max(0, B.shAmt - dt * 6); B.shLoad = Math.max(0, B.shLoad - dt * 6); B.shExt = 0; }
+  // the ball in the hand
+  const m = mkBallMesh();
+  if (B.charging || (B.shot && !B.shot.rel)) { m.visible = true; m.position.copy(mkHandPos(B.shot ? B.shExt : 0)); }
+  else if (!B.ball) m.visible = false;
+  // flight
+  if (B.ball) {
+    const b = B.ball; b.age += dt; b.vel.y -= SH_G * dt;
+    const step = b.vel.clone().multiplyScalar(dt), len = step.length(), nxt = b.pos.clone().add(step);
+    let hit = null;
+    if (MK.solids.length && len > 1e-4) { mkSolidRay.ray.origin.copy(b.pos); mkSolidRay.ray.direction.copy(step).normalize(); mkSolidRay.near = 0; mkSolidRay.far = len + 0.3; const hs = mkSolidRay.intersectObjects(MK.solids, false); if (hs.length) hit = hs[0].point; }
+    if (hit) { b.pos.copy(hit); mkBallFreeze('Point landed'); }
+    else if (nxt.y <= 0) { b.pos.copy(nxt); b.pos.y = 0; mkBallFreeze('Point landed'); }
+    else { b.pos.copy(nxt); m.position.copy(b.pos); if (b.age > 6) mkBallFreeze(); }
+  }
+  // dotted arc while winding up
+  if (!B.dots) { B.dots = []; for (let i = 0; i < 16; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), mkBallMat); d.visible = false; B.gU.add(d); B.dots.push(d); } }
+  if (preview) {
+    const pw = Math.min(1, (B.chargeT - 0.22) / 1.0), v = mkShotVel(Math.max(0, pw)), q = mkHandPos(1).clone(); let dead = false;
+    B.dots.forEach(d => {
+      for (let k = 0; k < 3 && !dead; k++) { v.y -= SH_G * 0.04; q.addScaledVector(v, 0.04); if (q.y <= 0) { q.y = 0; dead = true; } }
+      d.position.copy(q); d.visible = true;
+    });
+    let seen = false; B.dots.forEach(d => { if (seen) d.visible = false; if (d.position.y <= 0.001) seen = true; });
+  } else B.dots.forEach(d => { d.visible = false; });
+}
 function mkUpdate(dt) {
   MK.t += dt; const t = MK.t, B = MK, P = MK.pos;
   const G = 45, JV = 17, FV = 22, SP = 9;
@@ -2485,6 +2582,7 @@ function mkUpdate(dt) {
   let ky = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
   let ix = touchVec.x, iy = touchVec.y;
   if (kx || ky) { const l = Math.hypot(kx, ky); ix = kx / l; iy = ky / l; }
+  mkShotStep(dt, Math.hypot(ix, iy));
   if (B.fp) {   // the stick (and dragging the screen) turn Tuto's head instead of walking
     B.face -= ix * 2.0 * dt + orbitDelta * 0.005; B.look = THREE.MathUtils.clamp(B.look + iy * 1.5 * dt - pitchDelta * 0.004, -1.35, 1.35);
     ix = iy = 0; orbitDelta = pitchDelta = 0;
@@ -2528,7 +2626,8 @@ function mkUpdate(dt) {
   const lx = mx * Math.cos(B.face) - mz * Math.sin(B.face), lz = mx * Math.sin(B.face) + mz * Math.cos(B.face);
   const gr = B.gr;
   poseCharacter(H, { mag: !gr && mag > 0.1 ? mag : 0, zr: 0, grounded: gr ? true : B.grounded, sit: 0, dance: -1, flipT: B.flipT, airT: B.airT, glide: B.glideAmt, hold: 0, ride: 0,
-    sx: lx * mag, sz: lz * mag, held: false, gliding: B.gliding, grab: gr ? 1 : 0, grabUp: gr ? gr.hg : 0, grabLow: gr ? gr.sq : 0, t, tms: t * 1000 }, dt);
+    sx: lx * mag, sz: lz * mag, held: false, gliding: B.gliding, grab: gr ? 1 : 0, grabUp: gr ? gr.hg : 0, grabLow: gr ? gr.sq : 0, shAmt: B.flipT < 0 && !gr ? B.shAmt : 0, shLoad: B.shLoad, shExt: B.shExt, t, tms: t * 1000 }, dt);
+  if (B.shAmt > 0.01) mkReadHand();
   B.shadow.position.set(P.x, ground + 0.04, P.z);
   const ss = 1 / (1 + Math.max(0, P.y - ground) * 0.15); B.shadow.scale.setScalar(ss); B.shadow.material.opacity = 0.2 * ss;
   // the stage grows
@@ -2567,8 +2666,8 @@ function mkUpdate(dt) {
 }
 
 // --- Maker buttons
-const mkBtn = (id, fn) => { const b = mkEl(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(e); }); };
-mkBtn('mkPoint', mkPlacePoint); mkBtn('mkLine', () => mkLine()); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
+const mkBtn = (id, fn) => { const b = mkEl(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); mkBallFreeze(); fn(e); }); };
+mkBtn('mkLine', () => mkLine()); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
 mkBtn('mkUp', () => { if (MK.fp) MK.dist = Math.min(40, MK.dist + 0.5); else MK.ch = Math.min(40, MK.ch + 1); mkRebuild(); });
 mkBtn('mkDn', () => { if (MK.fp) MK.dist = Math.max(1, MK.dist - 0.5); else MK.ch = Math.max(-8, MK.ch - 1); mkRebuild(); });
 mkBtn('mkMenu', () => { mkEl('mkPanel').hidden = false; });
@@ -2598,7 +2697,7 @@ mkEl('mkFile').addEventListener('change', e => {
 // Look: hold to aim in first person (let go to walk again); a quick tap locks it on, tap again to leave
 {
   const lk = mkEl('mkLook'); let down = 0;
-  lk.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { lk.setPointerCapture(e.pointerId); } catch (_) { } down = performance.now(); if (!MK.fp) mkSetFP(true); });
+  lk.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { lk.setPointerCapture(e.pointerId); } catch (_) { } down = performance.now(); mkBallFreeze(); if (!MK.fp) mkSetFP(true); });
   const up = e => {
     if (!down) return; const quick = performance.now() - down < 300; down = 0;
     if (MK.fpLock) { MK.fpLock = false; lk.classList.remove('on'); mkSetFP(false); mkToast('Back to third person'); }
@@ -2620,10 +2719,21 @@ function mkTap(x, y) {
   MK.sel = MK.sel === best.id ? null : best.id; mkRebuild();
   mkToast(MK.sel ? 'Point selected. Line starts from it, Delete removes it' : 'Deselected');
 }
+// Point button: tap = place a point 3 steps ahead, hold = wind up a shot, let go = shoot
+{
+  const pb = mkEl('mkPoint');
+  pb.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { pb.setPointerCapture(e.pointerId); } catch (_) { } mkBallFreeze(); MK.pbDown = performance.now(); MK.charging = false; });
+  const up = e => {
+    if (!MK.pbDown) return; MK.pbDown = 0;
+    if (MK.charging) mkShootRelease(); else if (e.type === 'pointerup') mkPlacePoint();
+  };
+  pb.addEventListener('pointerup', up); pb.addEventListener('pointercancel', up);
+  if (!localStorage.getItem('tuto-shot-hint')) { /* hint shown on first build */ }
+}
 // hold a point or a line, then drag it to reshape the build
 mkBtn('mkGrab', () => { if (MK.gr) mkGrabEnd(false); else mkGrabStart(); });
 mkBtn('mkSolid', () => { MK.solid = !MK.solid; mkEl('mkSolid').classList.toggle('on', MK.solid); mkToast(MK.solid ? 'Solid: Tuto cannot walk through planes' : 'Planes are see-through again'); });
-addEventListener('keydown', e => { if (modeKind === 'maker' && e.code === 'KeyF' && !e.repeat) { if (MK.gr) mkGrabEnd(false); else mkGrabStart(); } });
+addEventListener('keydown', e => { if (modeKind === 'maker' && !e.repeat && !e.metaKey) mkBallFreeze(); if (modeKind === 'maker' && e.code === 'KeyF' && !e.repeat) { if (MK.gr) mkGrabEnd(false); else mkGrabStart(); } });
 
 MK.drag = null; MK.dragV = false;
 mkBtn('mkAxis', () => { MK.dragV = !MK.dragV; mkEl('mkAxis').querySelector('small').textContent = MK.dragV ? 'Wall' : 'Floor'; mkToast(MK.dragV ? 'Dragging moves things up and down' : 'Dragging slides things on the floor'); });

@@ -79,3 +79,7 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 - **Grab** (✋, or F): Tuto locks on to the nearest point or line in reach (a cyan ring shows which) and grabs it. Something at his feet makes him crouch; something overhead makes him hang by his hands. The stick drags it (Floor/Wall button picks the direction). Tap Grab again to let go, or **Jump** to leap off it.
 - **Solid** (▣): planes block Tuto from the sides and from below. Off = he can walk through them (he still lands on top).
 - Float (hold Jump while falling) and the double-jump flip work in Maker now too.
+
+### Tuto Maker: shooting points
+- Tap **●** to drop a point ahead of Tuto. **Hold** it and Tuto winds up a jump shot (dotted arc shows the flight; hold longer = farther). Let go and he hops, extends, flicks, and the point flies in an arc in the direction he faces (or where you aim in Look mode).
+- While it flies, any other input (stick, jump, any button or key) freezes it in the air as a real point. If nothing interrupts it, it freezes where it lands.
