@@ -92,3 +92,6 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 ### Tuto Maker: rival Tuto
 - **Foe** (😠) spawns a purple rival (up to 3; a 4th tap sends them home). It chases Tuto and lunges to grab him: caught Tuto is held in front of it. Tap **Jump** 3 times to break free (it gets stunned), or wait and it throws him.
 - If a plane is in its way, the rival punches and kicks it. Each hit tints the plane redder; the 3rd hit shatters it into pieces (Undo brings it back).
+
+## Tuto Jam (purple floppy)
+Grab the purple **JAM** disc to drop into a band room with four Tutos: singer (mic + guitar), pianist, drummer and bassist. Tap one to take over their instrument: piano keys, drum pads, a bass fretboard, or a singer with a voice strip (with vowels) plus guitar chords. The other three accompany you. Hit **Rec** to capture the mix, then **▶ Play take** or **⬇ MP3** to export it (needs the lamejs encoder from jsdelivr; the artifact viewer may block mp3 downloads, the GitHub Pages version works).

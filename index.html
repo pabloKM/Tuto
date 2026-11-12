@@ -150,6 +150,34 @@
   .mkgrid button { font:inherit; font-size:18px; padding:7px 4px; border:3px solid #161216; border-radius:12px; background:#7ED6A8; box-shadow:2px 2px 0 #161216; color:#161216; }
   .mkgrid button.wide { grid-column:1 / 3; background:#FDBA1C; font-size:21px; }
   .mkgrid button:active { transform:translate(1px,1px); box-shadow:1px 1px 0 #161216; }
+  /* ---------- Tuto Jam ---------- */
+  body.m-jam #joy, body.m-jam #stickZone, body.m-jam #jump, body.m-jam #zap, body.m-jam #mp, body.m-jam #act, body.m-jam #roomChip,
+  body.m-jam #hint, body.m-jam #tap, body.m-jam #music { display:none !important; }
+  body.m-jam #eject { display:flex; left:0; top:0; width:80px; height:80px; padding:6px 0 0 9px; border:0; border-radius:0; box-shadow:none; align-items:flex-start; justify-content:flex-start;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Cpath d='M2 2H78L2 78Z' fill='%239A5CF0' stroke='%23161216' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat; clip-path:polygon(0 0,100% 0,0 100%); }
+  body.m-jam #eject span { display:none; } body.m-jam #eject b { font-size:24px; }
+  #jm { position:fixed; inset:0; z-index:6; pointer-events:none; display:none; font-family:inherit; color:#161216; }
+  body.m-jam #jm { display:block; } #jm > * { pointer-events:auto; } #jm [hidden] { display:none !important; }
+  #jmTop { position:absolute; top:6px; left:60px; right:6px; display:flex; gap:4px; align-items:center; flex-wrap:wrap; pointer-events:none; } #jmTop > * { pointer-events:auto; }
+  #jm button { font:inherit; font-size:14px; font-weight:700; border:3px solid #161216; border-radius:12px; background:#fff; padding:5px 8px; box-shadow:2px 2px 0 #161216; color:#161216; touch-action:manipulation; }
+  #jm button.on, #jm button.hot { background:#C9A4FF; } #jmRec.on { background:#FF4D5E; color:#fff; }
+  #jmTime { font-weight:800; font-size:15px; background:#fff; border:3px solid #161216; border-radius:10px; padding:4px 8px; min-width:48px; text-align:center; }
+  #jmTake { display:flex; gap:6px; } #jmBpm { display:flex; gap:4px; align-items:center; background:#fff; border:3px solid #161216; border-radius:12px; padding:0 4px; font-weight:800; } #jmBpm button { padding:2px 8px; box-shadow:none; border-radius:8px; }
+  #jmMsg { position:absolute; top:100px; left:50%; transform:translateX(-50%); background:#161216; color:#fff; padding:7px 14px; border-radius:12px; font-size:14px; opacity:0; transition:opacity .25s; text-align:center; max-width:86vw; pointer-events:none !important; }
+  #jmDock { position:absolute; left:0; right:0; bottom:0; height:40vh; min-height:230px; background:#3B2E5C; border-top:4px solid #161216; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:6px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #jmTabs { display:flex; gap:6px; align-items:center; color:#fff; font-weight:800; } #jmTabs button { padding:2px 10px; font-size:20px; } #jmTabs span { margin-left:6px; }
+  #jmCtl { flex:1; position:relative; min-height:0; display:flex; flex-direction:column; gap:6px; }
+  #jmKeys { position:relative; flex:1; background:#161216; border:3px solid #161216; border-radius:10px; overflow:hidden; }
+  #jmKeys .wk { position:absolute; top:0; bottom:0; background:#fff8ec; border-right:2px solid #161216; display:flex; align-items:flex-end; justify-content:center; font-size:11px; color:#777; padding-bottom:4px; box-sizing:border-box; } #jmKeys .wk.hot { background:#9CC9FF; }
+  #jmKeys .bk { position:absolute; top:0; height:60%; background:#161216; border-radius:0 0 6px 6px; z-index:2; } #jmKeys .bk.hot { background:#4FA3FF; } #jmKeys i { font-style:normal; pointer-events:none; }
+  #jmPads { flex:1; display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:1fr 1fr 1fr; gap:6px; grid-auto-flow:row; }
+  #jmPads .pad { padding:0; font-size:16px; background:#FFD7B3; border-radius:14px; } #jmPads .pad.c1 { background:#FFE27A; } #jmPads .pad.c2 { background:#BFEFFF; } #jmPads .pad.c3 { background:#FF9F68; } #jmPads .pad.c4 { background:#fff; } #jmPads .pad.kick { grid-column:1 / 5; background:#FF8A3D; font-size:22px; } #jmPads .pad.hot { transform:translate(2px,2px); box-shadow:none; filter:brightness(.85); }
+  #jmFret { flex:1; display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(4,1fr); gap:3px; }
+  #jmFret .fr { border:2px solid #161216; border-radius:8px; background:#B8F0CF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; } #jmFret .fr.open { background:#3DCB7A; } #jmFret .fr.sc { background:#E8FFF0; } #jmFret .fr.hot { background:#FFD23C; }
+  #jmSub { display:flex; gap:6px; } #jmSub button { flex:1; } #jmSubBody { flex:1; display:flex; flex-direction:column; gap:6px; min-height:0; }
+  #jmVow { display:flex; gap:6px; } #jmVow button { flex:1; } #jmStrip { flex:1; display:flex; background:#161216; border:3px solid #161216; border-radius:10px; overflow:hidden; gap:2px; }
+  #jmStrip .sn { flex:1; background:#FFC2DB; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; font-weight:700; font-size:12px; pointer-events:none; } #jmStrip .sn.hot { background:#FF6FA8; } #jmStrip i { font-style:normal; }
+  #jmChords { flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; } #jmChords button { font-size:22px; background:#FFC2DB; }
   /* ---------- Tuto Motion (mocap) ---------- */
   body.m-mocap #joy, body.m-mocap #stickZone, body.m-mocap #jump, body.m-mocap #zap, body.m-mocap #mp, body.m-mocap #act, body.m-mocap #roomChip,
   body.m-mocap #hint, body.m-mocap #tap, body.m-mocap #music { display:none !important; }
@@ -278,6 +306,15 @@
   </div>
 </div>
 <input type="file" id="mkFile" accept=".json,application/json" hidden>
+<div id="jm">
+  <div id="jmTop">
+    <button id="jmBand">Band ▶</button><button id="jmRec">⏺ Rec</button><span id="jmTime">0:00</span>
+    <span id="jmBpm"><button id="jmBpmD">−</button><b id="jmBpmV">96</b><small>bpm</small><button id="jmBpmU">+</button></span>
+    <span id="jmTake" hidden><button id="jmPlay">▶ Play take</button><button id="jmExp">⬇ MP3</button><button id="jmDel">✕</button></span>
+  </div>
+  <div id="jmMsg"></div>
+  <div id="jmDock" hidden><div id="jmTabs"></div><div id="jmCtl"></div></div>
+</div>
 <div id="mc">
   <div id="mcCam">
     <video id="mcVideo" playsinline muted></video><canvas id="mcOverlay"></canvas>
@@ -1531,7 +1568,7 @@ musicBtn.addEventListener('pointerdown', e => {
   try { localStorage.setItem('stickhead-music', musicOn ? 'on' : 'off'); } catch (err) { }
   musicOn ? bgm.play().catch(() => { }) : bgm.pause();
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden) bgm.pause(); else if (mode !== 'intro' && modeKind !== 'iframe') playMusic(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) bgm.pause(); else if (mode !== 'intro' && modeKind !== 'iframe' && modeKind !== 'jam') playMusic(); });
 
 function startReveal() {
   if (mode !== 'intro') return;
@@ -1972,6 +2009,7 @@ const DISCS = [
   { id: 'nj', word: 'HOBOKEN', color: 0xE8402E },
   { id: 'mk', word: 'MAKER', color: 0xFFD23C },
   { id: 'mo', word: 'MOTION', color: 0xFF8A1F },
+  { id: 'jm', word: 'JAM', color: 0x9A5CF0 },
 ];
 const hexCss = c => '#' + c.toString(16).padStart(6, '0');
 let modeKind = 'planet';          // 'planet' | 'iframe' | 'maker'
@@ -2012,7 +2050,7 @@ function openMenu() {
   menu = { items: [], t: 0, center: base.clone() };
   DISCS.forEach((d, i) => {
     const f = buildFloppy(d);
-    f.base.copy(base).addScaledVector(rightV, (i - (DISCS.length - 1) / 2) * 0.9).addScaledVector(up, i % 2 ? 0.08 : -0.06);
+    f.base.copy(base).addScaledVector(rightV, (i - (DISCS.length - 1) / 2) * 0.8).addScaledVector(up, i % 2 ? 0.08 : -0.06);
     f.root.position.copy(f.base); f.root.scale.setScalar(0.001); scene.add(f.root); menu.items.push(f);
   });
   setExpr('shocked', 900, simT);
@@ -2104,6 +2142,7 @@ function switchTo(id) {
   const d = DISCS.find(x => x.id === id); curDiscColor = hexCss(d.color);
   if (id === 'mk') { startMaker(); modeKind = 'maker'; document.body.classList.add('m-maker'); }
   else if (id === 'mo') { startMocap(); modeKind = 'mocap'; document.body.classList.add('m-mocap'); }
+  else if (id === 'jm') { startJam(); modeKind = 'jam'; document.body.classList.add('m-jam'); }
   else { startFrame(id); modeKind = 'iframe'; document.body.classList.add('m-frame'); }
   setTimeout(() => flashTo(null, false), 150);
 }
@@ -2111,8 +2150,8 @@ function leaveMode() {
   if (modeKind === 'planet' || leaving) return; leaving = true;
   flashTo(curDiscColor, true);
   setTimeout(() => {
-    if (modeKind === 'maker') stopMaker(); else if (modeKind === 'mocap') stopMocap(); else stopFrame();
-    document.body.classList.remove('m-maker', 'm-frame', 'm-mocap', 'mk-explore');
+    if (modeKind === 'maker') stopMaker(); else if (modeKind === 'mocap') stopMocap(); else if (modeKind === 'jam') stopJam(); else stopFrame();
+    document.body.classList.remove('m-maker', 'm-frame', 'm-mocap', 'm-jam', 'mk-explore');
     modeKind = 'planet'; resetInputs(); last = performance.now(); playMusic();
     setExpr('smile', 1500, simT); flashTo(null, false); leaving = false;
   }, 420);
@@ -3338,12 +3377,383 @@ function mcExport() {
   mcEl('mcCam').addEventListener('pointerdown', e => { e.stopPropagation(); if (MC.demo) mcDemoToggle(); });
 }
 
+// ======================= TUTO JAM =======================
+// A purple floppy that drops you into a little band room. Four Tutos: singer (mic + guitar), pianist, drummer, bassist.
+// Touch one to play their instrument; the other three accompany you. Record the lot and export it as an mp3.
+const JA = { ctx: null, out: null, bus: {}, verb: null, noise: null, bpm: 96, step: 0, next: 0, timer: 0, band: false, ai: { sing: true, piano: true, drums: true, bass: true }, q: [], rec: null, take: null, playSrc: null };
+const JM = { ready: false, sel: null, tab: 'voice', cleanup: null, t: 0, notes: [], pulse: 0 };
+const JM_KEYS = ['sing', 'piano', 'drums', 'bass'];
+const JM_INFO = {
+  sing: { name: 'Singer', icon: '🎤', pal: { head: 0xFF6FA8, torso: 0xFFD3E6, red: 0xB02A6E }, pos: [-1.3, 0, 3.3], face: 0.15, col: 0xFF6FA8 },
+  piano: { name: 'Pianist', icon: '🎹', pal: { head: 0x4FA3FF, torso: 0xC4DEFF, red: 0x1E5BC6 }, pos: [-3.0, 0, 0.3], face: 0.45, col: 0x4FA3FF },
+  drums: { name: 'Drummer', icon: '🥁', pal: { head: 0xFF8A3D, torso: 0xFFD0AE, red: 0x8A3410 }, pos: [0.6, 0.6, -3.0], face: 0, col: 0xFF8A3D },
+  bass: { name: 'Bassist', icon: '🎸', pal: { head: 0x3DCB7A, torso: 0xBDF0D0, red: 0x14724A }, pos: [3.0, 0, 0.3], face: -0.45, col: 0x3DCB7A },
+};
+const jmEl = id => document.getElementById(id);
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+// Am - F - C - G, one bar each
+const JA_CH = [
+  { n: 'Am', root: 33, keys: [57, 60, 64], gtr: [45, 52, 57, 60, 64], tones: [57, 60, 64, 69, 72] },
+  { n: 'F', root: 29, keys: [57, 60, 65], gtr: [41, 48, 53, 57, 60], tones: [57, 60, 65, 69, 72] },
+  { n: 'C', root: 36, keys: [55, 60, 64], gtr: [48, 52, 55, 60, 64], tones: [60, 64, 67, 72, 76] },
+  { n: 'G', root: 31, keys: [55, 59, 62], gtr: [43, 50, 55, 59, 62], tones: [59, 62, 67, 71, 74] },
+];
+const GTR_CHORDS = [['Am', [45, 52, 57, 60, 64]], ['F', [41, 48, 53, 57, 60]], ['C', [48, 52, 55, 60, 64]], ['G', [43, 50, 55, 59, 62]], ['Em', [40, 47, 52, 55, 59]], ['Dm', [45, 50, 57, 62, 65]], ['E', [40, 47, 52, 56, 59]]];
+const VOWELS = { Ah: [800, 1150, 2900], Oh: [450, 800, 2830], Ee: [270, 2140, 2950], Oo: [300, 870, 2240] };
+
+// ---- audio
+function jaInit() {
+  if (JA.ctx) { if (JA.ctx.state === 'suspended') JA.ctx.resume(); return; }
+  const C = window.AudioContext || window.webkitAudioContext; if (!C) return; const ctx = JA.ctx = new C();
+  JA.out = ctx.createGain(); JA.out.gain.value = 0.85;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.15;
+  JA.out.connect(comp); comp.connect(ctx.destination);
+  JA.proc = ctx.createScriptProcessor(4096, 1, 1); comp.connect(JA.proc);
+  const z = ctx.createGain(); z.gain.value = 0; JA.proc.connect(z); z.connect(ctx.destination);
+  JA.proc.onaudioprocess = e => { if (JA.rec) JA.rec.chunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+  const nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1; JA.noise = nb;
+  const L = Math.floor(ctx.sampleRate * 1.5), ir = ctx.createBuffer(2, L, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3); }
+  JA.verb = ctx.createConvolver(); JA.verb.buffer = ir; const vg = ctx.createGain(); vg.gain.value = 0.5; JA.verb.connect(vg); vg.connect(JA.out);
+  const sends = { sing: 0.35, piano: 0.22, drums: 0.08, bass: 0.0 };
+  for (const k of JM_KEYS) { const b = ctx.createGain(); b.gain.value = 1; b.connect(JA.out); if (sends[k]) { const s = ctx.createGain(); s.gain.value = sends[k]; b.connect(s); s.connect(JA.verb); } JA.bus[k] = b; }
+}
+function jaNoise(t, dur, type, f, q, peak, dest, decay) {
+  const ctx = JA.ctx, s = ctx.createBufferSource(); s.buffer = JA.noise; const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+  const g = ctx.createGain(); g.gain.setValueAtTime(peak, t); g.gain.setTargetAtTime(0, t + 0.002, decay); s.connect(fl); fl.connect(g); g.connect(dest); s.start(t, Math.random() * 0.5); s.stop(t + dur);
+}
+function jaTone(t, type, f0, f1, dur, peak, dest, decay) {
+  const ctx = JA.ctx, o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.6);
+  const g = ctx.createGain(); g.gain.setValueAtTime(peak, t); g.gain.setTargetAtTime(0, t + 0.005, decay); o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur);
+}
+const DR = {
+  kick: (t, v, d) => { jaTone(t, 'sine', 160, 42, 0.4, v * 1.0, d, 0.09); jaNoise(t, 0.03, 'lowpass', 900, 1, v * 0.25, d, 0.01); },
+  snare: (t, v, d) => { jaNoise(t, 0.3, 'highpass', 1500, 0.7, v * 0.55, d, 0.07); jaTone(t, 'triangle', 220, 160, 0.2, v * 0.45, d, 0.05); },
+  hat: (t, v, d) => jaNoise(t, 0.12, 'highpass', 7500, 0.8, v * 0.3, d, 0.025),
+  open: (t, v, d) => jaNoise(t, 0.7, 'highpass', 6500, 0.8, v * 0.3, d, 0.17),
+  tom1: (t, v, d) => jaTone(t, 'sine', 210, 120, 0.5, v * 0.8, d, 0.13),
+  tom2: (t, v, d) => jaTone(t, 'sine', 160, 90, 0.5, v * 0.8, d, 0.15),
+  floor: (t, v, d) => jaTone(t, 'sine', 110, 62, 0.6, v * 0.9, d, 0.18),
+  crash: (t, v, d) => jaNoise(t, 1.8, 'highpass', 4200, 0.6, v * 0.42, d, 0.55),
+  ride: (t, v, d) => { jaNoise(t, 1.0, 'bandpass', 7000, 1.5, v * 0.3, d, 0.28); jaTone(t, 'square', 1900, 1900, 0.4, v * 0.04, d, 0.1); },
+};
+const DR_HAND = { kick: 'f', snare: 'b', hat: 'b', open: 'b', tom1: 'a', tom2: 'b', floor: 'b', crash: 'a', ride: 'b' };
+function jaHold(t, nodes, g) { return { off(time) { try { g.gain.cancelScheduledValues(time); g.gain.setTargetAtTime(0, time, 0.07); nodes.forEach(o => o.stop(time + 0.5)); } catch (e) { } } }; }
+function jaKeys(t, m, v, dest) {
+  const ctx = JA.ctx, g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.004); g.gain.setTargetAtTime(v * 0.3, t + 0.01, 0.35); g.connect(dest);
+  const mk = (type, f, a) => { const o = ctx.createOscillator(); o.type = type; o.frequency.value = f; const gg = ctx.createGain(); gg.gain.value = a; o.connect(gg); gg.connect(g); o.start(t); return o; };
+  return jaHold(t, [mk('sine', mtof(m), 1), mk('sine', mtof(m) * 2, 0.32), mk('triangle', mtof(m) * 1.004, 0.35)], g);
+}
+function jaBass(t, m, v, dest) {
+  const ctx = JA.ctx, g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.006); g.gain.setTargetAtTime(v * 0.6, t + 0.02, 0.25);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.setTargetAtTime(260, t + 0.01, 0.12); lp.Q.value = 2; lp.connect(g); g.connect(dest);
+  const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.connect(lp); o.start(t);
+  const s = ctx.createOscillator(); s.type = 'sine'; s.frequency.value = mtof(m); const sg = ctx.createGain(); sg.gain.value = 0.8; s.connect(sg); sg.connect(g); s.start(t);
+  return jaHold(t, [o, s], g);
+}
+function jaPluck(t, m, v, dest) {
+  const ctx = JA.ctx, g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.003); g.gain.setTargetAtTime(0, t + 0.01, 0.5);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(4200, t); lp.frequency.setTargetAtTime(700, t + 0.01, 0.25); lp.connect(g); g.connect(dest);
+  for (const [type, det] of [['sawtooth', 0], ['triangle', 5]]) { const o = ctx.createOscillator(); o.type = type; o.frequency.value = mtof(m); o.detune.value = det; o.connect(lp); o.start(t); o.stop(t + 2.4); }
+}
+function jaVoice(t, m, v, dest, vowel) {
+  const ctx = JA.ctx, g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.07); g.connect(dest);
+  const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m);
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 5.4; const lg = ctx.createGain(); lg.gain.value = 14; lfo.connect(lg); lg.connect(o.detune); lfo.start(t);
+  const fs = VOWELS[vowel] || VOWELS.Oh, fl = [];
+  fs.forEach((f, i) => { const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = f; b.Q.value = 7; const bg = ctx.createGain(); bg.gain.value = [1, 0.6, 0.3][i]; o.connect(b); b.connect(bg); bg.connect(g); fl.push(b); });
+  o.start(t);
+  return { off(time) { try { g.gain.cancelScheduledValues(time); g.gain.setTargetAtTime(0, time, 0.09); o.stop(time + 0.6); lfo.stop(time + 0.6); } catch (e) { } }, pitch(mm) { o.frequency.setTargetAtTime(mtof(mm), ctx.currentTime, 0.04); }, vowel(name) { const f2 = VOWELS[name]; if (f2) fl.forEach((b, i) => b.frequency.setTargetAtTime(f2[i], ctx.currentTime, 0.05)); } };
+}
+function jaStrum(t, notes, v, dest, down) {
+  const arr = down ? notes : notes.slice().reverse(); arr.forEach((m, i) => jaPluck(t + i * 0.016, m, v * (down ? 1 - i * 0.05 : 0.8 + i * 0.04), dest));
+}
+// ---- the backing band
+function jaEvent(inst, kind, delay, extra) { JA.q.push(Object.assign({ t: JA.ctx.currentTime + (delay || 0), inst, kind }, extra)); }
+function jaStepPlay(step, t) {
+  const bar = (step >> 4) & 3, pos = step & 15, ch = JA_CH[bar], R = Math.random, ctx = JA.ctx, ev = (inst, kind, extra) => JA.q.push(Object.assign({ t, inst, kind }, extra));
+  if (JA.ai.drums) {
+    const d = JA.bus.drums, kick = pos === 0 || pos === 8 || (bar % 2 ? (pos === 6 || pos === 10) : pos === 11), snare = pos === 4 || pos === 12;
+    if (kick) { DR.kick(t, 0.8 + R() * 0.1, d); ev('drums', 'f'); }
+    if (snare && !(bar === 3 && pos === 12)) { DR.snare(t, 0.7 + R() * 0.15, d); ev('drums', 'b'); }
+    if (pos % 2 === 0) { if (bar === 3 && pos === 14) { DR.open(t, 0.6, d); } else DR.hat(t, pos % 4 === 0 ? 0.7 : 0.45, d); ev('drums', pos % 4 ? 'a' : 'b'); }
+    if (bar === 0 && pos === 0 && JA.step % 64 === 0) { DR.crash(t, 0.8, d); ev('drums', 'a'); }
+    if (bar === 3 && pos >= 12) { const k = ['tom1', 'tom2', 'floor', 'floor'][pos - 12]; DR[k](t, 0.8, d); ev('drums', pos % 2 ? 'b' : 'a'); }
+  }
+  if (JA.ai.bass) {
+    const hit = [0, 3, 6, 8, 11, 14].indexOf(pos);
+    if (hit >= 0) { const m = ch.root + [0, 0, 12, 7, 0, 12][hit]; const h = jaBass(t, m, 0.5, JA.bus.bass); h.off(t + 0.22); ev('bass', 'p', { dur: 0.22, note: m }); }
+  }
+  if (JA.ai.piano && (pos === 0 || pos === 6 || pos === 10)) {
+    const len = pos === 0 ? 0.55 : 0.28; ch.keys.forEach((m, i) => { const h = jaKeys(t + i * 0.006, m, 0.17, JA.bus.piano); h.off(t + len); }); ev('piano', pos % 2 ? 'a' : 'b', { note: ch.keys[2] }); ev('piano', 'a');
+  }
+  if (JA.ai.sing) {
+    if ([0, 4, 6, 10, 12].includes(pos)) { const dn = pos !== 6 && pos !== 10; jaStrum(t, ch.gtr, 0.2, JA.bus.sing, dn); ev('sing', 'g'); }
+    if (pos % 4 === 0 && R() < 0.8 && !(bar === 3 && pos === 12)) {
+      const m = ch.tones[1 + Math.floor(R() * 4)], h = jaVoice(t, m, 0.12, JA.bus.sing, 'Oh'); h.off(t + 0.42); ev('sing', 'v', { dur: 0.42, note: m });
+    }
+  }
+}
+function jaTick() {
+  const ctx = JA.ctx; if (!ctx || !JA.band) return;
+  while (JA.next < ctx.currentTime + 0.14) { jaStepPlay(JA.step, JA.next); JA.next += 60 / JA.bpm / 4; JA.step++; }
+}
+function jaBandSet(on) {
+  jaInit(); JA.band = on; clearInterval(JA.timer);
+  if (on) { JA.step = 0; JA.next = JA.ctx.currentTime + 0.08; JA.timer = setInterval(jaTick, 25); }
+  jmEl('jmBand').textContent = on ? 'Band ■' : 'Band ▶'; jmEl('jmBand').classList.toggle('on', on);
+}
+// ---- recording / mp3
+function jaRecToggle() {
+  jaInit(); const b = jmEl('jmRec');
+  if (JA.rec) {
+    const r = JA.rec; JA.rec = null; b.classList.remove('on');
+    const n = r.chunks.reduce((a, c) => a + c.length, 0); if (n < JA.ctx.sampleRate * 0.5) return jmMsg('That was too short, try again');
+    JA.take = { chunks: r.chunks, sr: JA.ctx.sampleRate, n }; jmEl('jmTake').hidden = false; jmMsg('Saved your take (' + (n / JA.ctx.sampleRate).toFixed(1) + 's). Play it or export it.');
+  } else {
+    jaStopTake(); if (!JA.band && JM.sel) jaBandSet(true);
+    JA.rec = { chunks: [], t0: performance.now() }; b.classList.add('on'); jmEl('jmTake').hidden = true; jmMsg('Recording... play along!');
+  }
+}
+function jaStopTake() { if (JA.playSrc) { try { JA.playSrc.stop(); } catch (e) { } JA.playSrc = null; } jmEl('jmPlay').textContent = '▶ Play take'; }
+function jaPlayTake() {
+  if (JA.playSrc) return jaStopTake(); const T = JA.take; if (!T) return;
+  const buf = JA.ctx.createBuffer(1, T.n, T.sr), d = buf.getChannelData(0); let o = 0; for (const c of T.chunks) { d.set(c, o); o += c.length; }
+  const s = JA.ctx.createBufferSource(); s.buffer = buf; s.connect(JA.ctx.destination); s.onended = () => { if (JA.playSrc === s) { JA.playSrc = null; jmEl('jmPlay').textContent = '▶ Play take'; } }; s.start(); JA.playSrc = s; jmEl('jmPlay').textContent = '■ Stop';
+}
+async function jaLoadLame() {
+  if (window.lamejs) return;
+  for (const url of ['https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js', 'https://cdn.jsdelivr.net/gh/zhuker/lamejs@master/lame.min.js']) {
+    try { await new Promise((res, rej) => { const s = document.createElement('script'); s.src = url; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); if (window.lamejs) return; } catch (e) { }
+  }
+  throw new Error('no encoder');
+}
+async function jaEncodeMp3(T) {
+  await jaLoadLame();
+  const enc = new lamejs.Mp3Encoder(1, T.sr, 128), all = new Int16Array(T.n); let o = 0;
+  for (const c of T.chunks) { for (let i = 0; i < c.length; i++) { const v = Math.max(-1, Math.min(1, c[i])); all[o++] = v < 0 ? v * 32768 : v * 32767; } }
+  const parts = [];
+  for (let i = 0; i < all.length; i += 1152) { const b = enc.encodeBuffer(all.subarray(i, i + 1152)); if (b.length) parts.push(new Uint8Array(b)); if ((i / 1152) % 400 === 399) await new Promise(r => setTimeout(r, 0)); }
+  const f = enc.flush(); if (f.length) parts.push(new Uint8Array(f));
+  return new Blob(parts, { type: 'audio/mpeg' });
+}
+async function jaSaveFile(name, blob) {
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+    if (dl) { try { await dl.save({ filename: name, data: blob }); return jmMsg('Saved ' + name); } catch (e) { if (e && e.code === 'declined') return; } }
+  } catch (e) { }
+  try {
+    const file = new File([blob], name, { type: 'audio/mpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return jmMsg('Shared ' + name); }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); return jmMsg('Saved ' + name); } catch (e) { }
+  jmMsg('This viewer blocks MP3 downloads. Open the game at pablokm.github.io/Tuto to export.');
+}
+async function jaExport() {
+  const T = JA.take; if (!T) return; jmMsg('Making your mp3...');
+  try { const blob = await jaEncodeMp3(T); await jaSaveFile('tuto-jam.mp3', blob); } catch (e) { jmMsg('Could not make the mp3 here (' + (e && e.message || e) + ')'); }
+}
+function jmMsg(t) { const el = jmEl('jmMsg'); el.textContent = t; el.style.opacity = 1; clearTimeout(jmMsg.t); jmMsg.t = setTimeout(() => { el.style.opacity = 0; }, 3800); }
+
+// ---- the room
+function jmBox(w, h, d, c, x, y, z, parent) { const m = mesh(new THREE.BoxGeometry(w, h, d), c); m.position.set(x, y, z); parent.add(m); return m; }
+function jmCyl(rt, rb, h, c, x, y, z, parent, seg = 18) { const m = mesh(new THREE.CylinderGeometry(rt, rb, h, seg), c); m.position.set(x, y, z); parent.add(m); return m; }
+function jmBuildProps(id, root) {   // props live in the character's own space (natural scale, +z forward)
+  const g = new THREE.Group(); root.add(g); g.userData.cid = id;
+  if (id === 'piano') {
+    jmBox(1.7, 0.1, 0.55, 0x2A2630, 0, 0.98, 0.82, g);
+    for (let i = 0; i < 12; i++) jmBox(0.115, 0.04, 0.4, 0xFFF8EC, -0.78 + i * 0.142, 1.05, 0.88, g);
+    for (const i of [0, 1, 3, 4, 5, 7, 8, 10]) jmBox(0.07, 0.05, 0.24, 0x161216, -0.71 + i * 0.142, 1.09, 0.8, g);
+    for (const s of [-0.7, 0.7]) { jmBox(0.06, 0.95, 0.06, 0x7E6C9C, s, 0.5, 0.82, g); }
+    jmBox(1.5, 0.2, 0.06, 0x4FA3FF, 0, 1.12, 0.62, g);
+  } else if (id === 'drums') {
+    const kick = jmCyl(0.42, 0.42, 0.5, 0xFF8A3D, 0, 0.45, 0.85, g, 24); kick.rotation.x = Math.PI / 2; jmCyl(0.43, 0.43, 0.05, 0xFFF8EC, 0, 0.45, 1.1, g, 24).rotation.x = Math.PI / 2;
+    jmCyl(0.26, 0.26, 0.12, 0xFFF8EC, 0.05, 0.95, 0.65, g, 20);                                    // snare
+    for (const s of [-1, 1]) { jmCyl(0.02, 0.02, 0.5, 0x7E6C9C, s * 0.3, 1.0, 1.0, g, 6); jmCyl(0.22, 0.22, 0.16, 0xE8502E, s * 0.28, 1.28, 1.0, g, 20); }   // toms
+    jmCyl(0.02, 0.02, 1.0, 0x7E6C9C, -0.75, 0.6, 0.7, g, 6); jmCyl(0.28, 0.28, 0.03, 0xFFD23C, -0.75, 1.1, 0.7, g, 24);               // hi-hat
+    jmCyl(0.02, 0.02, 1.4, 0x7E6C9C, -0.9, 0.9, 0.2, g, 6); jmCyl(0.36, 0.36, 0.03, 0xFFD23C, -0.9, 1.62, 0.2, g, 24);                // crash
+    jmCyl(0.02, 0.02, 1.2, 0x7E6C9C, 0.95, 0.8, 0.3, g, 6); jmCyl(0.38, 0.38, 0.03, 0xFFD23C, 0.95, 1.42, 0.3, g, 24);                // ride
+    jmCyl(0.3, 0.3, 0.3, 0xE8502E, 0.75, 0.5, 0.75, g, 20);                                       // floor tom
+  } else if (id === 'bass' || id === 'sing') {
+    const body = id === 'bass' ? 0x3DCB7A : 0xFF6FA8, len = id === 'bass' ? 1.25 : 1.0, ng = new THREE.Group(); g.add(ng); ng.position.set(-0.05, 0.78, 0.55); ng.rotation.z = 0.32;
+    const b = mesh(new THREE.SphereGeometry(0.34, 16, 12), body); b.scale.set(1.0, 0.8, 0.28); ng.add(b); const b2 = mesh(new THREE.SphereGeometry(0.24, 16, 12), body); b2.scale.set(1, 0.9, 0.28); b2.position.set(0.3, 0.12, 0); ng.add(b2);
+    jmBox(len, 0.08, 0.06, 0x3B2E3F, 0.3 + len / 2, 0.14, 0.02, ng); jmBox(0.2, 0.14, 0.05, 0x161216, 0.3 + len, 0.14, 0.02, ng);
+    jmBox(0.2, 0.12, 0.03, 0xFFF8EC, -0.02, -0.02, 0.1, ng);
+    if (id === 'sing') {   // mic stand
+      jmCyl(0.28, 0.32, 0.05, 0x2A2630, 0, 0.03, 1.15, g, 18); jmCyl(0.025, 0.025, 1.85, 0x7E6C9C, 0, 0.95, 1.15, g, 8);
+      const mic = mesh(new THREE.SphereGeometry(0.1, 14, 10), 0x2A2630); mic.position.set(0, 1.92, 1.05); g.add(mic); jmCyl(0.07, 0.05, 0.22, 0xB0A2C4, 0, 1.78, 1.1, g, 10).rotation.x = -0.4;
+    }
+  }
+  return g;
+}
+function jmInit() {
+  if (JM.ready) return; JM.ready = true;
+  const sc = JM.scene = new THREE.Scene(); sc.background = new THREE.Color(0x2A1F45); sc.fog = new THREE.Fog(0x2A1F45, 40, 90);
+  JM.cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
+  sc.add(new THREE.AmbientLight(0xffffff, 1.25)); const sn = new THREE.DirectionalLight(0xffffff, 2.2); sn.position.set(6, 22, 16); sc.add(sn);
+  const floor = mesh(new THREE.CylinderGeometry(13, 13, 0.4, 48), 0x6E4FA8, false); floor.position.y = -0.2; sc.add(floor);
+  const stage = mesh(new THREE.CylinderGeometry(8.4, 8.6, 0.3, 48), 0x9A5CF0); stage.position.y = -0.03; sc.add(stage);
+  const wall = mesh(new THREE.BoxGeometry(34, 14, 0.5), 0x3B2E5C, false); wall.position.set(0, 7, -9.5); sc.add(wall);
+  for (let i = -3; i <= 3; i++) { const s = mesh(new THREE.BoxGeometry(0.5, 11, 0.2), [0xFF6FA8, 0x4FA3FF, 0xFFD23C, 0x3DCB7A, 0xFF8A3D, 0x4FA3FF, 0xFF6FA8][i + 3], false); s.position.set(i * 3.4, 6, -9.2); sc.add(s); }
+  for (const s of [-1, 1]) { jmBox(1.8, 3.2, 1.4, 0x2A2630, s * 8.6, 1.6, -3.2, sc); jmCyl(0.6, 0.6, 0.1, 0x7E6C9C, s * 8.6, 1.9, -2.45, sc, 20).rotation.x = Math.PI / 2; }
+  jmCyl(2.1, 2.2, 0.6, 0x7A4FC8, 0.6, 0.3, -3.0, sc, 32);
+  JM.chars = {}; JM.pick = [];
+  for (const id of JM_KEYS) {
+    const I = JM_INFO[id], hero = buildCharacter(I.pal); hero.anim = newAnim(); hero.root.scale.setScalar(MK_SCALE); hero.root.position.set(...I.pos); hero.root.rotation.y = I.face; sc.add(hero.root);
+    hero.root.userData.cid = id; const props = jmBuildProps(id, hero.root);
+    const pad = new THREE.Mesh(new THREE.CircleGeometry(1.7, 32).rotateX(-Math.PI / 2), noOl(new THREE.MeshBasicMaterial({ color: I.col, transparent: true, opacity: 0.35, depthWrite: false }))); pad.position.set(I.pos[0], 0.14, I.pos[2]); sc.add(pad);
+    JM.chars[id] = { id, hero, props, pad, h: { a: 0, b: 0, f: 0, g: 0, v: 0 }, singUntil: 0, voice: 0, I }; JM.pick.push(hero.root);
+    hero.root.traverse(o => { o.userData.cid = id; });
+  }
+  JM.ray = new THREE.Raycaster();
+}
+function jmNoteFx(c, n) {   // a floating musical note
+  if (JM.notes.length > 24) return;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); x.font = 'bold 52px sans-serif'; x.fillStyle = '#' + c.I.col.toString(16).padStart(6, '0'); x.strokeStyle = '#161216'; x.lineWidth = 6; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const ch = ['♪', '♫'][n % 2]; x.strokeText(ch, 32, 34); x.fillText(ch, 32, 34);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); sp.scale.set(1.1, 1.1, 1);
+  const r = c.hero.root; sp.position.set(r.position.x + (Math.random() - 0.5) * 1.8, 4.6, r.position.z + 0.5); sp.renderOrder = 9; JM.scene.add(sp); JM.notes.push({ sp, t: 0 });
+}
+function jmHit(id, kind, extra) {
+  const c = JM.chars[id]; if (!c) return;
+  if (kind === 'v') { c.singUntil = JM.t + (extra && extra.dur || 0.4); } else { c.h[kind] = 1; }
+  c.nfx = (c.nfx || 0) + 1; if (kind !== 'f' && c.nfx % 3 === 0) jmNoteFx(c, c.nfx);
+}
+function jmPose(c, dt, t) {
+  const P = c.hero.parts, body = c.hero.body, h = c.h; for (const k in h) h[k] = Math.max(0, h[k] - dt * 7);
+  poseCharacter(c.hero, { mag: 0, zr: 0, grounded: true, sit: 0, dance: -1, flipT: -1, airT: 0, glide: 0, hold: 0, ride: 0, sx: 0, sz: 0, held: false, gliding: false, t, tms: t * 1000 }, dt);
+  const beat = Math.abs(Math.sin(JM.pulse * Math.PI)), amp = JA.band || JM.sel === c.id ? 1 : 0.35;
+  body.position.y = -0.05 * (1 - beat) * amp - h.f * 0.08; body.rotation.z = Math.sin(t * Math.PI * (JA.bpm / 60) * 0.5) * 0.04 * amp;
+  const id = c.id;
+  if (id === 'piano') {
+    P.shL.rotation.x = -1.15 + h.a * 0.3; P.shR.rotation.x = -1.15 + h.b * 0.3; P.shL.rotation.z = -0.18; P.shR.rotation.z = 0.18; P.elL.rotation.x = -0.45 - h.a * 0.2; P.elR.rotation.x = -0.45 - h.b * 0.2;
+    body.rotation.x = 0.08 + Math.sin(t * 2.4) * 0.03 * amp;
+  } else if (id === 'drums') {
+    P.shL.rotation.x = -1.7 + h.a * 0.9 * 1.0 + (1 - h.a) * 0.55 * (1 - 0) * 0; P.shR.rotation.x = -1.7 + h.b * 0.9;
+    P.shL.rotation.x = -0.65 - 0.95 * h.a; P.shR.rotation.x = -0.65 - 0.95 * h.b; P.shL.rotation.z = -0.35; P.shR.rotation.z = 0.35; P.elL.rotation.x = -0.9 + 0.6 * h.a; P.elR.rotation.x = -0.9 + 0.6 * h.b;
+    P.hipL.rotation.x = -0.3 - h.f * 0.5; P.hipR.rotation.x = -0.1; body.rotation.x = 0.1 * h.f;
+  } else {   // bass and singer share the slung-guitar stance
+    const sw = Math.sin(h.g * Math.PI) * 0.5; P.shL.rotation.x = -0.95 - sw * 0.4 + h.a * 0.2; P.shL.rotation.z = -0.35; P.elL.rotation.x = -0.9;
+    P.shR.rotation.x = -1.25; P.shR.rotation.z = 0.2; P.elR.rotation.x = -0.35; body.rotation.x = 0.05;
+    if (id === 'bass') { P.shL.rotation.x = -0.95 + h.a * 0.25; }
+    if (id === 'sing') {
+      const singing = JM.t < c.singUntil || c.voice > 0;
+      if (singing) { P.head.rotation.x = -0.28 + Math.sin(t * 6) * 0.04; P.shL.rotation.x = -1.75; P.shL.rotation.z = -0.1; P.elL.rotation.x = -1.7; body.rotation.x = -0.08; if (Math.random() < dt * 3) jmNoteFx(c, 1); } else P.head.rotation.x *= 0.9;
+    }
+  }
+}
+function jmUpdate(dt) {
+  JM.t += dt; const ctx = JA.ctx;
+  JM.pulse = JA.band && ctx ? ((JA.step * 0.25) % 1) : (JM.pulse + dt * (JA.bpm / 60)) % 1;
+  if (ctx) { while (JA.q.length && JA.q.length && JA.q[0].t <= ctx.currentTime) { const e = JA.q.shift(); jmHit(e.inst, e.kind, e); } }
+  for (const id of JM_KEYS) {
+    const c = JM.chars[id]; jmPose(c, dt, JM.t);
+    const sel = JM.sel === id; c.pad.material.opacity = sel ? 0.6 + 0.2 * Math.sin(JM.t * 6) : 0.28; c.pad.scale.setScalar(sel ? 1.08 : 1);
+    c.hero.root.position.y = c.I.pos[1];
+  }
+  for (let i = JM.notes.length - 1; i >= 0; i--) { const n = JM.notes[i]; n.t += dt; n.sp.position.y += dt * 1.6; n.sp.position.x += Math.sin(n.t * 4) * dt * 0.6; n.sp.material.opacity = Math.max(0, 1 - n.t / 1.6); if (n.t > 1.6) { JM.scene.remove(n.sp); n.sp.material.map.dispose(); n.sp.material.dispose(); JM.notes.splice(i, 1); } }
+  const a = innerWidth / innerHeight, th = Math.tan(THREE.MathUtils.degToRad(JM.cam.fov / 2)), d = Math.max(13, 4.6 / (th * a));
+  JM.cam.aspect = a; JM.cam.position.set(0, d * 0.45, d); JM.cam.lookAt(0, 1.6, 0.3); JM.cam.setViewOffset(innerWidth, innerHeight, 0, innerHeight * (JM.sel ? 0.2 : 0.04), innerWidth, innerHeight);
+  if (JA.rec) { const s = (performance.now() - JA.rec.t0) / 1000; jmEl('jmTime').textContent = Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0'); }
+}
+// ---- controllers
+function jmSelect(id) {
+  if (JM.cleanup) { JM.cleanup(); JM.cleanup = null; }
+  jaInit(); JM.sel = id; for (const k of JM_KEYS) JA.ai[k] = k !== id;
+  if (!JA.band) jaBandSet(true);
+  const tabs = jmEl('jmTabs'); tabs.innerHTML = '';
+  JM_KEYS.forEach(k => { const b = document.createElement('button'); b.textContent = JM_INFO[k].icon; b.className = k === id ? 'on' : ''; b.setAttribute('aria-label', JM_INFO[k].name); b.addEventListener('pointerdown', e => { e.preventDefault(); jmSelect(k); }); tabs.appendChild(b); });
+  const nm = document.createElement('span'); nm.textContent = JM_INFO[id].name; tabs.appendChild(nm);
+  const ctl = jmEl('jmCtl'); ctl.innerHTML = ''; jmEl('jmDock').hidden = false;
+  JM.cleanup = ({ sing: jmCtlSing, piano: jmCtlPiano, drums: jmCtlDrums, bass: jmCtlBass })[id](ctl);
+  jmMsg(JM_INFO[id].name + ' is you now. The rest of the band plays along.');
+}
+const jmPress = (el, down, up) => {   // pointer helper that also slides between keys
+  const on = e => { e.preventDefault(); try { e.target.releasePointerCapture && e.target.releasePointerCapture(e.pointerId); } catch (_) { } el.classList.add('hot'); down(e); };
+  const off = e => { if (!el.classList.contains('hot')) return; el.classList.remove('hot'); up && up(e); };
+  el.addEventListener('pointerdown', on); el.addEventListener('pointerenter', e => { if (e.buttons & 1) on(e); });
+  el.addEventListener('pointerup', off); el.addEventListener('pointerleave', off); el.addEventListener('pointercancel', off);
+};
+function jmCtlPiano(ctl) {
+  jaInit(); const wrap = document.createElement('div'); wrap.id = 'jmKeys'; ctl.appendChild(wrap); const held = {}; let hand = 0;
+  const WH = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16], base = 60;
+  const kw = 100 / WH.length;
+  const start = (m, el) => { jaInit(); if (held[m]) return; held[m] = jaKeys(JA.ctx.currentTime, m, 0.5, JA.bus.piano); hand ^= 1; jmHit('piano', hand ? 'a' : 'b'); };
+  const stop = m => { if (held[m]) { held[m].off(JA.ctx.currentTime); delete held[m]; } };
+  WH.forEach((o, i) => { const k = document.createElement('div'); k.className = 'wk'; k.style.left = (i * kw) + '%'; k.style.width = kw + '%'; const m = base + o; k.innerHTML = `<i>${NOTE_NAMES[m % 12]}</i>`; jmPress(k, () => start(m), () => stop(m)); wrap.appendChild(k); });
+  WH.forEach((o, i) => { const n = (o % 12); if ([0, 2, 5, 7, 9].includes(n) && i < WH.length - 1) { const k = document.createElement('div'); k.className = 'bk'; k.style.left = ((i + 1) * kw - kw * 0.3) + '%'; k.style.width = kw * 0.6 + '%'; const m = base + o + 1; jmPress(k, () => start(m), () => stop(m)); wrap.appendChild(k); } });
+  return () => Object.keys(held).forEach(m => stop(+m));
+}
+function jmCtlDrums(ctl) {
+  jaInit(); const g = document.createElement('div'); g.id = 'jmPads'; ctl.appendChild(g);
+  const pads = [['crash', 'Crash', 'c1'], ['hat', 'Hi-hat', 'c2'], ['open', 'Open', 'c2'], ['ride', 'Ride', 'c1'], ['tom1', 'Tom 1', 'c3'], ['snare', 'Snare', 'c4'], ['tom2', 'Tom 2', 'c3'], ['floor', 'Floor', 'c3'], ['kick', 'KICK', 'kick']];
+  for (const [k, label, cls] of pads) { const b = document.createElement('button'); b.textContent = label; b.className = 'pad ' + cls; b.addEventListener('pointerdown', e => { e.preventDefault(); jaInit(); DR[k](JA.ctx.currentTime, 0.95, JA.bus.drums); jmHit('drums', DR_HAND[k]); b.classList.add('hot'); setTimeout(() => b.classList.remove('hot'), 90); }); g.appendChild(b); }
+  return () => { };
+}
+function jmCtlBass(ctl) {
+  jaInit(); const g = document.createElement('div'); g.id = 'jmFret'; ctl.appendChild(g); const held = {}; let n = 0;
+  const strings = [43, 38, 33, 28];   // G D A E
+  strings.forEach((open, si) => { for (let f = 0; f < 8; f++) { const m = open + f, b = document.createElement('div'); b.className = 'fr' + (f === 0 ? ' open' : '') + ([0, 3, 5, 7].includes(m % 12) ? ' sc' : ''); b.textContent = NOTE_NAMES[m % 12];
+    jmPress(b, () => { jaInit(); const key = si; if (held[key]) held[key].off(JA.ctx.currentTime); held[key] = jaBass(JA.ctx.currentTime, m, 0.7, JA.bus.bass); jmHit('bass', 'a'); }, () => { if (held[si]) { held[si].off(JA.ctx.currentTime + 0.04); delete held[si]; } }); g.appendChild(b); } });
+  return () => Object.values(held).forEach(h => h.off(JA.ctx.currentTime));
+}
+function jmCtlSing(ctl) {
+  jaInit(); const tabs = document.createElement('div'); tabs.id = 'jmSub'; ctl.appendChild(tabs); const body = document.createElement('div'); body.id = 'jmSubBody'; ctl.appendChild(body);
+  let cleanup = null, vow = 'Oh', strumDown = true;
+  const show = which => {
+    if (cleanup) cleanup(); body.innerHTML = ''; JM.tab = which; [...tabs.children].forEach(b => b.classList.toggle('on', b.dataset.k === which));
+    if (which === 'voice') {
+      const vr = document.createElement('div'); vr.id = 'jmVow'; ['Ah', 'Oh', 'Ee', 'Oo'].forEach(v => { const b = document.createElement('button'); b.textContent = v; b.className = v === vow ? 'on' : ''; b.addEventListener('pointerdown', e => { e.preventDefault(); vow = v; [...vr.children].forEach(x => x.classList.toggle('on', x === b)); if (cur) cur.vowel(v); }); vr.appendChild(b); }); body.appendChild(vr);
+      const strip = document.createElement('div'); strip.id = 'jmStrip'; body.appendChild(strip);
+      const SC = [57, 60, 62, 64, 67, 69, 72, 74, 76, 79, 81], cols = []; let cur = null, curM = -1;     // A minor pentatonic
+      SC.forEach((m, i) => { const c = document.createElement('div'); c.className = 'sn'; c.innerHTML = `<i>${NOTE_NAMES[m % 12]}</i>`; strip.appendChild(c); cols.push(c); });
+      const pick = e => { const r = strip.getBoundingClientRect(), i = Math.max(0, Math.min(SC.length - 1, Math.floor((e.clientX - r.left) / r.width * SC.length))); return i; };
+      const sing = e => { const i = pick(e), m = SC[i]; cols.forEach((c, j) => c.classList.toggle('hot', j === i)); if (!cur) { jaInit(); cur = jaVoice(JA.ctx.currentTime, m, 0.4, JA.bus.sing, vow); JM.chars.sing.voice = 1; curM = m; } else if (m !== curM) { cur.pitch(m); curM = m; jmHit('sing', 'a'); } };
+      const end = () => { if (cur) { cur.off(JA.ctx.currentTime); cur = null; JM.chars.sing.voice = 0; } cols.forEach(c => c.classList.remove('hot')); };
+      strip.addEventListener('pointerdown', e => { e.preventDefault(); strip.setPointerCapture(e.pointerId); sing(e); });
+      strip.addEventListener('pointermove', e => { if (e.buttons & 1) sing(e); });
+      strip.addEventListener('pointerup', end); strip.addEventListener('pointercancel', end);
+      cleanup = end;
+    } else {
+      const g = document.createElement('div'); g.id = 'jmChords'; body.appendChild(g);
+      GTR_CHORDS.forEach(([n, notes]) => { const b = document.createElement('button'); b.textContent = n; b.addEventListener('pointerdown', e => { e.preventDefault(); jaInit(); jaStrum(JA.ctx.currentTime, notes, 0.5, JA.bus.sing, strumDown); strumDown = !strumDown; jmHit('sing', 'g'); b.classList.add('hot'); setTimeout(() => b.classList.remove('hot'), 110); }); g.appendChild(b); });
+      cleanup = null;
+    }
+  };
+  [['voice', '🎤 Voice'], ['gtr', '🎸 Guitar']].forEach(([k, l]) => { const b = document.createElement('button'); b.textContent = l; b.dataset.k = k; b.addEventListener('pointerdown', e => { e.preventDefault(); show(k); }); tabs.appendChild(b); });
+  show(JM.tab === 'gtr' ? 'gtr' : 'voice');
+  return () => { if (cleanup) cleanup(); };
+}
+function startJam() {
+  jmInit(); bgm.pause(); JM.sel = null; JM.t = 0; JA.ai = { sing: true, piano: true, drums: true, bass: true };
+  jmEl('jmDock').hidden = true; jmEl('jmTake').hidden = !JA.take; jmBandReset(); jmMsg('Tap a bandmate to play with the band!');
+}
+function jmBandReset() { jaBandSet(false); }
+function stopJam() {
+  if (JM.cleanup) { JM.cleanup(); JM.cleanup = null; }
+  if (JA.rec) jaRecToggle(); jaStopTake(); if (JA.ctx) { clearInterval(JA.timer); JA.band = false; } JA.q.length = 0;
+}
+cvs.addEventListener('pointerdown', e => {
+  if (modeKind !== 'jam') return;
+  const rc = JM.ray; rc.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), JM.cam);
+  const hs = rc.intersectObjects(JM.pick, true); if (hs.length) { let o = hs[0].object; while (o && !o.userData.cid) o = o.parent; if (o) jmSelect(o.userData.cid); }
+});
+jmEl('jmRec').addEventListener('pointerdown', e => { e.preventDefault(); jaRecToggle(); });
+jmEl('jmBand').addEventListener('pointerdown', e => { e.preventDefault(); jaBandSet(!JA.band); });
+jmEl('jmPlay').addEventListener('pointerdown', e => { e.preventDefault(); jaPlayTake(); });
+jmEl('jmExp').addEventListener('pointerdown', e => { e.preventDefault(); jaExport(); });
+jmEl('jmDel').addEventListener('pointerdown', e => { e.preventDefault(); jaStopTake(); JA.take = null; jmEl('jmTake').hidden = true; });
+jmEl('jmBpmD').addEventListener('pointerdown', e => { e.preventDefault(); JA.bpm = Math.max(60, JA.bpm - 4); jmEl('jmBpmV').textContent = JA.bpm; });
+jmEl('jmBpmU').addEventListener('pointerdown', e => { e.preventDefault(); JA.bpm = Math.min(150, JA.bpm + 4); jmEl('jmBpmV').textContent = JA.bpm; });
+
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (modeKind === 'planet') { update(dt); effect.render(scene, camera); }
   else if (modeKind === 'maker') { mkUpdate(dt); effect.render(MK.scene, MK.cam); }
   else if (modeKind === 'mocap') { mcUpdate(dt); effect.render(MC.scene, MC.cam); }
+  else if (modeKind === 'jam') { jmUpdate(dt); effect.render(JM.scene, JM.cam); }
   requestAnimationFrame(frame);
 }
 update(0);
@@ -3351,10 +3761,11 @@ requestAnimationFrame(frame);
 
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  if (JM.cam) { JM.cam.aspect = innerWidth / innerHeight; JM.cam.updateProjectionMatrix(); }
   if (MK.cam) { MK.cam.aspect = innerWidth / innerHeight; MK.cam.updateProjectionMatrix(); }
   renderer.setSize(innerWidth, innerHeight);
 });
-window.__debug = { MK, MC, mcSolve, mcApply, mcDemoFrame, openMenu, switchTo, chooseDisc, leaveMode, get menu() { return menu; }, get modeKind() { return modeKind; }, mkPlacePoint, mkLine, mkFill, mkDelete, input, touchVec, keys, get hero() { return hero; }, get mode() { return mode; } };
+window.__debug = { MK, MC, JM, JA, jmSelect, jaRecToggle, jaEncodeMp3, jaExport, mcSolve, mcApply, mcDemoFrame, openMenu, switchTo, chooseDisc, leaveMode, get menu() { return menu; }, get modeKind() { return modeKind; }, mkPlacePoint, mkLine, mkFill, mkDelete, input, touchVec, keys, get hero() { return hero; }, get mode() { return mode; } };
 </script>
 </body>
 </html>
