@@ -65,3 +65,7 @@ Built with [three.js](https://threejs.org/). Everything is in `index.html`.
 A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swipe up to jump & flip, and collect all 3 stars to reach the next stage.
 
 **Play it:** https://pablokm.github.io/Tuto/sid-dash/
+
+### Tuto Maker: first person + touch select
+- Tap a point to select it (cyan); Line / Delete then use it. While drawing a line, tapping a point links it.
+- Hold **Look** to see through Tuto's eyes: the stick aims the camera, ▲▼ set distance, height follows where he looks. Quick-tap Look to latch it on.

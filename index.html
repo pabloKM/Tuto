@@ -98,6 +98,11 @@
   #mkBuild { position:absolute; left:50%; top:14px; transform:translateX(-50%); font:inherit; font-size:20px; padding:4px 16px; background:#FFD23C; border:3px solid #161216; border-radius:14px; box-shadow:2px 3px 0 #161216; color:#161216; }
   #mkToast { position:absolute; left:50%; bottom:calc(150px + env(safe-area-inset-bottom)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
     padding:4px 16px; opacity:0; transition:opacity .25s; pointer-events:none !important; text-align:center; max-width:80vw; }
+  #mkCross { position:absolute; left:50%; top:50%; width:30px; height:30px; margin:-15px 0 0 -15px; display:none; pointer-events:none !important; }
+  #mkCross::before, #mkCross::after { content:''; position:absolute; background:#161216; box-shadow:0 0 0 2px #fff; }
+  #mkCross::before { left:13px; top:0; width:4px; height:30px; } #mkCross::after { top:13px; left:0; height:4px; width:30px; }
+  body.mk-fp #mkCross { display:block; } body.mk-fp.mk-explore #mkCross { display:none; }
+  #mkLook.on { background:#7ED6A8; }
   body.mk-explore #mkTools, body.mk-explore #mkChip { display:none; } body:not(.mk-explore) #mkBuild { display:none; }
   #mkPanel { position:fixed; inset:0; z-index:40; background:rgba(22,18,22,.45); display:flex; align-items:center; justify-content:center; }
   #mkPanel[hidden] { display:none; }
@@ -203,6 +208,7 @@
 <div id="mk">
   <div id="mkChip"></div>
   <div id="mkTools">
+    <button class="mkb" id="mkLook" aria-label="First person: hold to aim with the stick, tap to lock"><b>👁</b><small>Look</small></button>
     <button class="mkb" id="mkPoint" aria-label="Place a point 3 units in front of Tuto"><b>●</b><small id="mkPointL">Point</small></button>
     <div id="mkH"><button id="mkUp" aria-label="Raise the point">▲</button><button id="mkDn" aria-label="Lower the point">▼</button></div>
     <button class="mkb" id="mkLine" aria-label="Draw a line between points"><b>╱</b><small>Line</small></button>
@@ -211,6 +217,7 @@
     <button class="mkb" id="mkDel" aria-label="Delete the thing by the pink dot"><b>✕</b><small>Delete</small></button>
     <button class="mkb" id="mkMenu" aria-label="Colours, save and export"><b>☰</b><small>More</small></button>
   </div>
+  <div id="mkCross"></div>
   <button id="mkBuild">🔨 Build</button>
   <div id="mkToast"></div>
 </div>
@@ -2042,7 +2049,7 @@ document.getElementById('eject').addEventListener('pointerdown', e => { e.preven
 const MK_SCALE = 4 / 3.2;                        // Tuto's natural height is 3.2
 const MKC = [0xFF6B5B, 0xFFB43C, 0xFFE45E, 0x7ED6A8, 0x4FC3F7, 0x8C7BFF, 0xF3EEE6, 0x3A3542];
 const MKSAVE = 'tuto-maker-level-v1';
-const MK = { ready: false, data: null, undo: [], chain: [], color: 2, ch: 0, explore: false, t: 0,
+const MK = { ready: false, data: null, undo: [], chain: [], color: 2, ch: 0, explore: false, t: 0, fp: false, fpLock: false, look: 0, dist: 3, sel: null,
   pos: new THREE.Vector3(), vy: 0, grounded: true, airT: 0, flipT: -1, usedFlip: false, face: 0, yaw: Math.PI, pitch: 0.5,
   camT: new THREE.Vector3(), rect: { x0: -12, x1: 12, z0: -12, z1: 12 }, tgt: { x0: -12, x1: 12, z0: -12, z1: 12 }, solids: [], saved: null };
 const mkEmpty = () => ({ v: 1, next: 1, points: [], edges: [], planes: [] });
@@ -2167,15 +2174,23 @@ function mkRebuild() {
     const m = new THREE.Mesh(edgeGeo, edgeMat); m.userData.shared = true; placeEdge(m, a.p, b.p, 0.07); MK.gE.add(m);
   }
   for (const p of D.points) {
-    const inChain = MK.chain.includes(p.id), first = MK.chain[0] === p.id;
-    const m = new THREE.Mesh(ptGeo, toon(first ? 0xFF3D7F : inChain ? 0xFFB43C : 0xFFE45E)); m.userData.shared = true;
-    m.position.set(...p.p); m.scale.setScalar(inChain ? 1.3 : 1); MK.gP.add(m);
+    const inChain = MK.chain.includes(p.id), first = MK.chain[0] === p.id, sel = MK.sel === p.id;
+    const m = new THREE.Mesh(ptGeo, toon(sel ? 0x2BD9FF : first ? 0xFF3D7F : inChain ? 0xFFB43C : 0xFFE45E)); m.userData.shared = true;
+    m.position.set(...p.p); m.scale.setScalar(sel ? 1.7 : inChain ? 1.3 : 1); MK.gP.add(m);
   }
   MK.gP.visible = !MK.explore;
   mkBounds();
   mkEl('mkChip').textContent = `● ${D.points.length}   ╱ ${D.edges.length}   ▰ ${D.planes.length}`;
-  mkEl('mkPointL').textContent = MK.ch === 0 ? 'Point' : 'Point ' + (MK.ch > 0 ? '↑' : '↓') + Math.abs(MK.ch);
+  mkLabels();
   mkEl('mkLine').classList.toggle('on', MK.chain.length > 0);
+}
+function mkLabels() {
+  mkEl('mkPointL').textContent = MK.fp ? 'Point ' + MK.dist + 'm' : MK.ch === 0 ? 'Point' : 'Point ' + (MK.ch > 0 ? '↑' : '↓') + Math.abs(MK.ch);
+}
+function mkSetFP(on) {
+  MK.fp = on; document.body.classList.toggle('mk-fp', on);
+  MK.hero.root.visible = !on; MK.shadow.visible = !on;
+  MK.cam.fov = on ? 72 : 55; MK.cam.updateProjectionMatrix(); mkLabels();
 }
 function mkAutosave() { try { localStorage.setItem(MKSAVE, JSON.stringify(MK.data)); return true; } catch (e) { return false; } }
 function mkCommit() { mkRebuild(); mkAutosave(); }
@@ -2188,7 +2203,13 @@ let mkToastT = 0;
 function mkToast(t) { const el = mkEl(document.body.classList.contains('m-mocap') ? 'mcToast' : 'mkToast'); el.textContent = t; el.style.opacity = 1; clearTimeout(mkToastT); mkToastT = setTimeout(() => { el.style.opacity = 0; }, 2200); }
 
 // --- the pink dot and the tools
+const mkEye = () => new THREE.Vector3(MK.pos.x, MK.pos.y + 2.56, MK.pos.z);
+function mkAimDir() { const c = Math.cos(MK.look); return new THREE.Vector3(Math.sin(MK.face) * c, Math.sin(MK.look), Math.cos(MK.face) * c); }
 function mkCursor() {
+  if (MK.fp) {   // first person: the dot sits where Tuto is looking, at the chosen distance
+    const q = mkEye().addScaledVector(mkAimDir(), MK.dist);
+    return new THREE.Vector3(snapTo(q.x), Math.max(0, snapTo(q.y)), snapTo(q.z));
+  }
   return new THREE.Vector3(snapTo(MK.pos.x + Math.sin(MK.face) * 3), snapTo(MK.pos.y + MK.ch), snapTo(MK.pos.z + Math.cos(MK.face) * 3));
 }
 function mkNearest(c, r) {
@@ -2203,9 +2224,10 @@ function mkPlacePoint() {
   mkPush(); MK.data.points.push({ id: MK.data.next++, p: [c.x, c.y, c.z] }); mkCommit();
 }
 function mkFillChain() { MK.data.planes.push({ ids: [...MK.chain], c: MK.color }); MK.chain = []; mkCommit(); mkToast('Plane made!'); }
-function mkLine() {
-  const np = mkNearest(mkCursor(), 1.6);
-  if (!np) return mkToast('Put the pink dot next to a point');
+function mkLine(forced) {
+  const np = forced || (MK.sel && mkById(MK.sel)) || mkNearest(mkCursor(), 1.6);
+  MK.sel = null;
+  if (!np) return mkToast('Tap a point, or put the pink dot next to one');
   const ch = MK.chain;
   if (!ch.length) { mkPush(); ch.push(np.id); mkCommit(); return mkToast('Now pick the next point'); }
   const last = ch[ch.length - 1];
@@ -2220,7 +2242,8 @@ function mkFill() {
   mkPush(); mkAddEdge(MK.chain[MK.chain.length - 1], MK.chain[0]); mkFillChain();
 }
 function mkDelete() {
-  const c = mkCursor(), D = MK.data, np = mkNearest(c, 1.6);
+  const c = mkCursor(), D = MK.data, np = (MK.sel && mkById(MK.sel)) || mkNearest(c, 1.6);
+  MK.sel = null;
   if (np) {
     mkPush();
     D.points = D.points.filter(p => p.id !== np.id); D.edges = D.edges.filter(e => e[0] !== np.id && e[1] !== np.id);
@@ -2338,13 +2361,13 @@ function startMaker() {
   MK.saved = { camDist, DIST_MIN, DIST_MAX };
   camDist = 18; DIST_MIN = 7; DIST_MAX = 90;
   MK.pos.set(0, 0, 0); MK.face = 0; MK.yaw = Math.PI; MK.pitch = 0.5; MK.vy = 0; MK.grounded = true; MK.flipT = -1; MK.ch = 0; MK.chain = [];
-  MK.camT.set(0, 2.2, 0); MK.explore = false; document.body.classList.remove('mk-explore');
+  MK.camT.set(0, 2.2, 0); MK.fpLock = false; MK.sel = null; mkSetFP(false); mkEl('mkLook').classList.remove('on'); MK.explore = false; document.body.classList.remove('mk-explore');
   MK.rect = Object.assign({}, MK.tgt);
   mkRebuild(); mkApplyRect(); mkEl('mkPanel').hidden = true;
   if (!MK.hinted) { MK.hinted = true; setTimeout(() => mkToast('● drops a point 3 steps ahead of Tuto'), 900); }
 }
 function stopMaker() {
-  mkAutosave(); mkEl('mkPanel').hidden = true;
+  mkSetFP(false); mkAutosave(); mkEl('mkPanel').hidden = true;
   if (MK.saved) { camDist = MK.saved.camDist; DIST_MIN = MK.saved.DIST_MIN; DIST_MAX = MK.saved.DIST_MAX; }
 }
 function mkUpdate(dt) {
@@ -2354,8 +2377,12 @@ function mkUpdate(dt) {
   let ky = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
   let ix = touchVec.x, iy = touchVec.y;
   if (kx || ky) { const l = Math.hypot(kx, ky); ix = kx / l; iy = ky / l; }
+  if (B.fp) {   // the stick (and dragging the screen) turn Tuto's head instead of walking
+    B.face -= ix * 2.0 * dt + orbitDelta * 0.005; B.look = THREE.MathUtils.clamp(B.look + iy * 1.5 * dt - pitchDelta * 0.004, -1.35, 1.35);
+    ix = iy = 0; orbitDelta = pitchDelta = 0;
+  }
   const mag = Math.min(1, Math.hypot(ix, iy));
-  knob.setAttribute('transform', `translate(${100 + ix * KNOB_MAX} ${132 - iy * KNOB_MAX})`);
+  knob.setAttribute('transform', `translate(${100 + (B.fp ? touchVec.x : ix) * KNOB_MAX} ${132 - (B.fp ? touchVec.y : iy) * KNOB_MAX})`);
   // camera orbit / pitch
   B.yaw -= orbitDelta * 0.006 + ((keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0)) * 2.2 * dt;
   B.pitch = THREE.MathUtils.clamp(B.pitch + pitchDelta * 0.005, 0.1, 1.45); orbitDelta = pitchDelta = 0;
@@ -2405,17 +2432,22 @@ function mkUpdate(dt) {
     B.rubber.visible = !!last; if (last) placeEdge(B.rubber, last.p, np ? np.p : [cu.x, cu.y, cu.z], 0.045);
   }
   // camera
-  B.camT.lerp(tmpV.set(P.x, P.y + 2.2, P.z), 1 - Math.exp(-9 * dt));
-  const cp = Math.cos(B.pitch) * camDist;
-  B.cam.position.set(B.camT.x + Math.sin(B.yaw) * cp, B.camT.y + Math.sin(B.pitch) * camDist, B.camT.z + Math.cos(B.yaw) * cp);
-  B.cam.lookAt(B.camT);
+  if (B.fp) {   // Tuto's eyes
+    const eye = mkEye(); B.cam.position.copy(eye); B.cam.lookAt(eye.clone().add(mkAimDir()));
+    B.yaw = B.face + Math.PI;   // so the third-person camera comes back from behind him
+  } else {
+    B.camT.lerp(tmpV.set(P.x, P.y + 2.2, P.z), 1 - Math.exp(-9 * dt));
+    const cp = Math.cos(B.pitch) * camDist;
+    B.cam.position.set(B.camT.x + Math.sin(B.yaw) * cp, B.camT.y + Math.sin(B.pitch) * camDist, B.camT.z + Math.cos(B.yaw) * cp);
+    B.cam.lookAt(B.camT);
+  }
 }
 
 // --- Maker buttons
 const mkBtn = (id, fn) => { const b = mkEl(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(e); }); };
-mkBtn('mkPoint', mkPlacePoint); mkBtn('mkLine', mkLine); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
-mkBtn('mkUp', () => { MK.ch = Math.min(40, MK.ch + 1); mkRebuild(); });
-mkBtn('mkDn', () => { MK.ch = Math.max(-8, MK.ch - 1); mkRebuild(); });
+mkBtn('mkPoint', mkPlacePoint); mkBtn('mkLine', () => mkLine()); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
+mkBtn('mkUp', () => { if (MK.fp) MK.dist = Math.min(40, MK.dist + 0.5); else MK.ch = Math.min(40, MK.ch + 1); mkRebuild(); });
+mkBtn('mkDn', () => { if (MK.fp) MK.dist = Math.max(1, MK.dist - 0.5); else MK.ch = Math.max(-8, MK.ch - 1); mkRebuild(); });
 mkBtn('mkMenu', () => { mkEl('mkPanel').hidden = false; });
 mkEl('mkPanel').addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === mkEl('mkPanel')) mkEl('mkPanel').hidden = true; });
 mkEl('mkClose').addEventListener('click', () => { mkEl('mkPanel').hidden = true; });
@@ -2423,7 +2455,7 @@ const mkSw = mkEl('mkSw');
 MKC.forEach((col, i) => { const s = document.createElement('i'); s.style.background = hexCss(col); s.addEventListener('click', () => { MK.color = i; [...mkSw.children].forEach((x, j) => x.classList.toggle('on', j === i)); }); mkSw.appendChild(s); });
 mkSw.children[MK.color].classList.add('on');
 function mkSetExplore(on) {
-  MK.explore = on; document.body.classList.toggle('mk-explore', on); MK.chain = []; mkEl('mkPanel').hidden = true; mkRebuild();
+  MK.explore = on; document.body.classList.toggle('mk-explore', on); MK.chain = []; MK.sel = null; if (on) { MK.fpLock = false; mkEl('mkLook').classList.remove('on'); mkSetFP(false); } mkEl('mkPanel').hidden = true; mkRebuild();
   if (on) mkToast('Explore! Walk and jump on your build');
 }
 mkEl('mkExplore').addEventListener('click', () => mkSetExplore(true));
@@ -2440,6 +2472,35 @@ mkEl('mkFile').addEventListener('change', e => {
   rd.onload = () => { mkPush(); mkToast(mkLoadText(String(rd.result)) ? 'Level opened' : 'That file is not a Tuto level'); mkEl('mkPanel').hidden = true; };
   rd.readAsText(f); e.target.value = '';
 });
+// Look: hold to aim in first person (let go to walk again); a quick tap locks it on, tap again to leave
+{
+  const lk = mkEl('mkLook'); let down = 0;
+  lk.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { lk.setPointerCapture(e.pointerId); } catch (_) { } down = performance.now(); if (!MK.fp) mkSetFP(true); });
+  const up = e => {
+    if (!down) return; const quick = performance.now() - down < 300; down = 0;
+    if (MK.fpLock) { MK.fpLock = false; lk.classList.remove('on'); mkSetFP(false); mkToast('Back to third person'); }
+    else if (quick) { MK.fpLock = true; lk.classList.add('on'); mkToast('First person: stick aims, ▲▼ = distance'); }
+    else mkSetFP(false);
+  };
+  lk.addEventListener('pointerup', up); lk.addEventListener('pointercancel', up);
+}
+// tap a point to select it (then Line / Delete use it); while a line is being drawn, tapping a point links it
+function mkTap(x, y) {
+  if (MK.explore) return;
+  let best = null, bd = 34;
+  for (const p of MK.data.points) {
+    const v = new THREE.Vector3(...p.p).project(MK.cam); if (v.z > 1 || v.z < -1) continue;
+    const d = Math.hypot((v.x * 0.5 + 0.5) * innerWidth - x, (-v.y * 0.5 + 0.5) * innerHeight - y); if (d < bd) { bd = d; best = p; }
+  }
+  if (!best) { if (MK.sel) { MK.sel = null; mkRebuild(); } return; }
+  if (MK.chain.length) return mkLine(best);
+  MK.sel = MK.sel === best.id ? null : best.id; mkRebuild();
+  mkToast(MK.sel ? 'Point selected. Line starts from it, Delete removes it' : 'Deselected');
+}
+let mkTapDown = null;
+cvs.addEventListener('pointerdown', e => { mkTapDown = modeKind === 'maker' && camPtrs.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
+cvs.addEventListener('pointermove', e => { if (mkTapDown && Math.hypot(e.clientX - mkTapDown.x, e.clientY - mkTapDown.y) > 12) mkTapDown = null; });
+cvs.addEventListener('pointerup', e => { const d = mkTapDown; mkTapDown = null; if (d && modeKind === 'maker' && performance.now() - d.t < 400) mkTap(e.clientX, e.clientY); });
 let mkNewArm = 0;
 mkEl('mkNew').addEventListener('click', () => {
   if (!mkNewArm) { mkNewArm = 1; mkEl('mkNew').textContent = 'Tap again to erase everything'; setTimeout(() => { mkNewArm = 0; mkEl('mkNew').textContent = 'Start a new level'; }, 2500); return; }
