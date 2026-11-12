@@ -95,3 +95,6 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 
 ## Tuto Jam (purple floppy)
 Grab the purple **JAM** disc to drop into a band room with four Tutos: singer (mic + guitar), pianist, drummer and bassist. Tap one to take over their instrument: piano keys, drum pads, a bass fretboard, or a singer with a voice strip (with vowels) plus guitar chords. The other three accompany you. Hit **Rec** to capture the mix, then **▶ Play take** or **⬇ MP3** to export it (needs the lamejs encoder from jsdelivr; the artifact viewer may block mp3 downloads, the GitHub Pages version works).
+
+### Jam together
+Tap **👥 Play together** in Jam to start or join a room (same codes as the planet). Everyone who is in Jam shares the band: you each pick an instrument (a **P1/P2…** tag shows who is on what), the backing band mutes any part a real player has taken, tempo is shared, and everyone's notes are heard live. Each player can record their own mix. Notes travel over the room's presence channel, so expect a little network lag.
