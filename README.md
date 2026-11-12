@@ -28,10 +28,12 @@ Press and hold a finger on Tuto and four floppy discs float up in front of him. 
 
 - 🔵 **Tuto AR**: the AR sandbox (`ar/`).
 - 🔴 **Tuto Hoboken**: Stick Head in Hoboken (`nj/`).
-- 🟠 **Tuto Motion**: motion capture. Start the camera and a stick-figure skeleton is drawn over you while the left Tuto copies you live. ⏺ records, and the right Tuto replays the clip. Save clips on your phone, or export `tuto-motion.json` (MediaPipe landmarks plus the motion already solved into Tuto's bones) to animate a game character. Needs internet the first time (it downloads the pose finder). *Try demo* runs a built-in dancer with no camera.
+- 🟠 **Tuto Motion**: motion capture. Start the camera and a stick-figure skeleton is drawn over you while the left Tuto copies you live. ⏺ records, and the right Tuto replays the clip. Save clips on your phone, or export a `.bvh` (Blender and game engines) or `tuto-motion.json` (MediaPipe landmarks plus the motion already solved into Tuto's bones, elbows and knees included) to animate a game character. Needs internet the first time (it downloads the pose finder). *Try demo* runs a built-in dancer with no camera.
 - 🟡 **Tuto Maker**: a tiny Blender inside the platformer. In a white void (Tuto is 4 units tall) press ● to drop a point 3 units in front of him (▲▼ move the pink dot up and down), ╱ to link points with lines, and ▰ (or close the loop) to fill them into a solid plane. Tuto can stand on what you build. The stage grows as you build. ☰ has colours, **Explore** mode, save/load, and export as `.gltf`, `.obj` or `.json`.
 
 The ⏏ button brings you back to the planet.
+
+Tuto has two-segment arms and legs everywhere (planet, AR, Hoboken, Maker, Motion): elbows and knees bend as he runs, jumps, flips and rides.
 
 ## Things to try
 

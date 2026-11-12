@@ -295,6 +295,15 @@ function toon(color, outline = true) {
 const mesh = (g, c, outline = true) => new THREE.Mesh(g, toon(c, outline));
 
 // ---------- character ----------
+// elbows and knees follow from the swing the pose already chose: arms bend as they swing forward, legs bend as they swing back or lift
+function limbBends(P, runAmt) {
+  for (const [hip, kn, sh, el] of [[P.hipL, P.knL, P.shL, P.elL], [P.hipR, P.knR, P.shR, P.elR]]) {
+    const hx = hip.rotation.x;
+    kn.rotation.x = Math.min(1.9, Math.max(0, hx) * 1.1 + Math.max(0, -hx - 0.4) * 0.55 + 0.04);
+    const over = Math.min(1, Math.max(0, (Math.abs(sh.rotation.z) - 1.6) / 1.0));
+    el.rotation.x = -(0.14 + Math.max(0, -sh.rotation.x) * 0.9 * (0.4 + 0.6 * runAmt)) * (1 - over);
+  }
+}
 function buildCharacter(pal = { head: COL.head, torso: COL.torso, red: COL.red }) {
   const root = new THREE.Group();     // origin at feet, +Y up, +Z forward
   // flip pivot sits at the middle of the character (stick-cap top is at ~3.2) so flips
@@ -310,10 +319,15 @@ function buildCharacter(pal = { head: COL.head, torso: COL.torso, red: COL.red }
   const bootGeo = new RoundedBoxGeometry(0.3, 0.22, 0.4, 4, 0.09);
   for (const s of [-1, 1]) {
     const hip = new THREE.Group(); hip.position.set(0.16 * s, 0.62 + LIFT, 0); body.add(hip);
-    const leg = mesh(new THREE.CylinderGeometry(0.095, 0.1, 0.69, 14), COL.pants); leg.position.y = -0.345; hip.add(leg);
-    const boot = mesh(bootGeo, pal.red); boot.position.set(0.01 * s, -0.75, 0.05); hip.add(boot);
+    // two-segment leg: thigh, knee joint, shin + boot (total length unchanged)
+    const thigh = mesh(new THREE.CylinderGeometry(0.1, 0.099, 0.35, 14), COL.pants); thigh.position.y = -0.175; hip.add(thigh);
+    const kn = new THREE.Group(); kn.position.y = -0.35; hip.add(kn);
+    kn.add(mesh(new THREE.SphereGeometry(0.103, 14, 10), COL.pants));
+    const shin = mesh(new THREE.CylinderGeometry(0.099, 0.1, 0.34, 14), COL.pants); shin.position.y = -0.17; kn.add(shin);
+    const boot = mesh(bootGeo, pal.red); boot.position.set(0.01 * s, -0.4, 0.05); kn.add(boot);
     // boot shaft: covers the ankle
-    const shaftB = mesh(new THREE.CylinderGeometry(0.122, 0.135, 0.2, 18), pal.red); shaftB.position.set(0.005 * s, -0.6, 0.0); hip.add(shaftB);
+    const shaftB = mesh(new THREE.CylinderGeometry(0.122, 0.135, 0.2, 18), pal.red); shaftB.position.set(0.005 * s, -0.25, 0.0); kn.add(shaftB);
+    parts[s < 0 ? 'knL' : 'knR'] = kn;
     parts[s < 0 ? 'hipL' : 'hipR'] = hip;
   }
   // pants (big round hips)
@@ -329,11 +343,16 @@ function buildCharacter(pal = { head: COL.head, torso: COL.torso, red: COL.red }
   // arms + mittens (arms 50% longer than v1)
   for (const s of [-1, 1]) {
     const sh = new THREE.Group(); sh.position.set(0.24 * s, 1.08 + LIFT, 0); sh.rotation.z = 0.38 * s; body.add(sh);
-    const arm = mesh(new THREE.CapsuleGeometry(0.07, 0.38, 4, 10), pal.torso); arm.position.y = -0.24; sh.add(arm);
-    const mitt = mesh(new THREE.SphereGeometry(0.13, 18, 14), pal.red); mitt.scale.set(1, 1.08, 0.9); mitt.position.y = -0.54; sh.add(mitt);
-    const thumb = mesh(new THREE.SphereGeometry(0.055, 12, 10), pal.red); thumb.position.set(-0.09 * s, -0.49, 0.07); sh.add(thumb);
+    // two-segment arm: upper arm, elbow joint, forearm + glove (reach unchanged)
+    const upper = mesh(new THREE.CapsuleGeometry(0.07, 0.15, 4, 10), pal.torso); upper.position.y = -0.135; sh.add(upper);
+    const el = new THREE.Group(); el.position.y = -0.27; sh.add(el);
+    el.add(mesh(new THREE.SphereGeometry(0.074, 12, 10), pal.torso));
+    const fore = mesh(new THREE.CapsuleGeometry(0.066, 0.14, 4, 10), pal.torso); fore.position.y = -0.13; el.add(fore);
+    const mitt = mesh(new THREE.SphereGeometry(0.13, 18, 14), pal.red); mitt.scale.set(1, 1.08, 0.9); mitt.position.y = -0.27; el.add(mitt);
+    const thumb = mesh(new THREE.SphereGeometry(0.055, 12, 10), pal.red); thumb.position.set(-0.09 * s, -0.22, 0.07); el.add(thumb);
     // glove cuff: covers the wrist
-    const cuff = mesh(new THREE.CylinderGeometry(0.088, 0.105, 0.15, 16), pal.red); cuff.position.y = -0.42; sh.add(cuff);
+    const cuff = mesh(new THREE.CylinderGeometry(0.088, 0.105, 0.15, 16), pal.red); cuff.position.y = -0.15; el.add(cuff);
+    parts[s < 0 ? 'elL' : 'elR'] = el;
     parts[s < 0 ? 'shL' : 'shR'] = sh;
   }
 
@@ -1153,6 +1172,7 @@ function poseCharacter(ch, s, dt) {
     P.shL.rotation.z = -1.2 - Math.sin(t * 11) * 0.6; P.shR.rotation.z = 1.2 + Math.sin(t * 11 + 1) * 0.6;
     body.rotation.set(0.1, 0, 0); body.position.y = 0;
   }
+  limbBends(P, runAmt);
   if (flipX !== null) { F.rotation.x = flipX; F.rotation.y = flipY; }
   else {
     const kk = Math.min(1, 14 * dt);
@@ -1758,8 +1778,8 @@ function update(dt) {
     const P = hero.parts;
     while (sparkAcc >= 1) {
       sparkAcc -= 1;
-      const foot = (Math.random() < 0.5 ? P.hipL : P.hipR);
-      const fp = new THREE.Vector3(0, -0.75, 0); foot.localToWorld(fp);
+      const foot = (Math.random() < 0.5 ? P.knL : P.knR);
+      const fp = new THREE.Vector3(0, -0.4, 0); foot.localToWorld(fp);
       fp.addScaledVector(back, Math.random() * 0.35).addScaledVector(up, 0.05);
       emitSpark(fp, up, Math.random() < 0.25);
       if (Math.random() < 0.12) {
@@ -2438,7 +2458,7 @@ const MC_COL = ['#C6F23A', '#FF6BB5', '#4FD8F7', '#FFE45E'];
 const mcEl = id => document.getElementById(id);
 
 function mcNewState() {
-  return { qB: new MCQ(), qH: new MCQ(), qAR: new MCQ(), qAL: new MCQ(), qLR: new MCQ(), qLL: new MCQ(), hx: 0.5, hy: 0.6, bx: null, by: null, root: [0, 0] };
+  return { qB: new MCQ(), qH: new MCQ(), qAR: new MCQ(), qAL: new MCQ(), qLR: new MCQ(), qLL: new MCQ(), qER: new MCQ(), qEL: new MCQ(), qKR: new MCQ(), qKL: new MCQ(), hx: 0.5, hy: 0.6, bx: null, by: null, root: [0, 0] };
 }
 // world landmarks (x right, y down, z away from the camera, metres) -> Tuto's frame (x right on screen, y up, z toward the viewer)
 function mcSolve(L, aux, flipZ, st, mir = true) {
@@ -2455,8 +2475,14 @@ function mcSolve(L, aux, flipZ, st, mir = true) {
     st.qB.copy(new MCQ().slerp(q, 0.6));
   }
   const inv = st.qB.clone().invert();
-  const limb = (a, b, key) => { if (vis(a) > 0.4 && vis(b) > 0.4) { const d = V(b).sub(V(a)).normalize().applyQuaternion(inv); st[key].setFromUnitVectors(down, d); } };
-  limb(12, 16, 'qAR'); limb(11, 15, 'qAL'); limb(24, 28, 'qLR'); limb(23, 27, 'qLL');
+  // two segments per limb: the upper bone points from joint a to b; the lower bone (elbow / knee) is solved relative to it
+  const limb = (a, b, c, kA, kB) => {
+    if (vis(a) > 0.4 && vis(b) > 0.4 && vis(c) > 0.4) {
+      const d1 = V(b).sub(V(a)).normalize().applyQuaternion(inv); st[kA].setFromUnitVectors(down, d1);
+      const d2 = V(c).sub(V(b)).normalize().applyQuaternion(inv).applyQuaternion(st[kA].clone().invert()); st[kB].setFromUnitVectors(down, d2);
+    }
+  };
+  limb(12, 14, 16, 'qAR', 'qER'); limb(11, 13, 15, 'qAL', 'qEL'); limb(24, 26, 28, 'qLR', 'qKR'); limb(23, 25, 27, 'qLL', 'qKL');
   if (vis(7) > 0.4 && vis(8) > 0.4 && vis(0) > 0.4) {
     const X = V(LE).sub(V(RE)).normalize(), mid = V(7).add(V(8)).multiplyScalar(0.5), Zr = V(0).sub(mid);
     const Z = Zr.addScaledVector(X, -Zr.dot(X)).normalize(), Y = new MCV().crossVectors(Z, X);
@@ -2472,6 +2498,7 @@ function mcApply(ch, st, dt, home) {
   ch.body.quaternion.slerp(st.qB, k); P.head.quaternion.slerp(st.qH, k);
   P.shR.quaternion.slerp(st.qAR, k); P.shL.quaternion.slerp(st.qAL, k);   // mirror: your right limbs are on the right of the screen
   P.hipR.quaternion.slerp(st.qLR, k); P.hipL.quaternion.slerp(st.qLL, k);
+  P.elR.quaternion.slerp(st.qER, k); P.elL.quaternion.slerp(st.qEL, k); P.knR.quaternion.slerp(st.qKR, k); P.knL.quaternion.slerp(st.qKL, k);
   P.stick.quaternion.slerp(new MCQ(), Math.min(1, 10 * dt));
   if (st.bx === null) { st.bx = st.hx; st.by = st.hy; }
   const ea = 1 - Math.exp(-0.5 * dt); st.bx += (st.hx - st.bx) * ea; st.by += (st.hy - st.by) * ea;   // slow baseline: sway and hops show, walking away doesn't
@@ -2488,9 +2515,9 @@ function mcDemoFrame(t) {
     put(hi, s * 0.12, 0, 0);
     const sx = s * 0.2 * cy, sz = -s * 0.2 * sy; put(shi, sx, 0.5, sz);
     const th = 1.6 + 1.4 * Math.sin(t * 2.2 + (s < 0 ? Math.PI : 0)), d = new MCV(s * Math.sin(th), -Math.cos(th), 0.45 * Math.sin(t * 3.1 + s)).normalize();
-    put(wi, sx + d.x * 0.6, 0.5 + d.y * 0.6, sz + d.z * 0.6); put(ei, sx + d.x * 0.3, 0.5 + d.y * 0.3, sz + d.z * 0.3);
+    put(wi, sx + d.x * 0.6, 0.5 + d.y * 0.6, sz + d.z * 0.6); put(ei, sx + d.x * 0.3, 0.5 + d.y * 0.3, sz + d.z * 0.3 + 0.16 * (1 + Math.sin(t * 2.6 + s)));
     const ld = new MCV(s * (0.12 + 0.18 * Math.max(0, Math.sin(t * 2 + (s < 0 ? 0 : Math.PI)))), -1, 0.35 * Math.sin(t * 3 + (s < 0 ? 0 : 2))).normalize();
-    put(ai, s * 0.12 + ld.x * 0.8, ld.y * 0.8, ld.z * 0.8); put(ki, s * 0.12 + ld.x * 0.4, ld.y * 0.4, ld.z * 0.4);
+    put(ai, s * 0.12 + ld.x * 0.8, ld.y * 0.8, ld.z * 0.8); put(ki, s * 0.12 + ld.x * 0.4, ld.y * 0.4, ld.z * 0.4 + 0.2 * Math.max(0, Math.sin(t * 2 + (s < 0 ? 0 : Math.PI))));
     const hy = 0.65 + 0.4 * 0.2; put(ear, s * 0.08 * Math.cos(0.6 * Math.sin(t * 1.1)), hy + 0.18, -s * 0.08 * Math.sin(0.6 * Math.sin(t * 1.1)));
   }
   const hy2 = 0.6 * Math.sin(t * 1.1); put(0, 0.1 * Math.sin(hy2), 0.83, 0.1 * Math.cos(hy2));
@@ -2633,7 +2660,7 @@ function mcSave() {
   try { localStorage.setItem(MCKEY, JSON.stringify(all)); MC.clip.name = clip.name; mkToast('Saved as ' + clip.name); } catch (e) { mkToast('Not enough room to save here, use Export'); }
 }
 function mcShowList() {
-  const list = mcEl('mcList'); list.textContent = ''; const all = mcLoadSaved();
+  const list = mcEl('mcList'); list.textContent = ''; mcEl('mcPanel').querySelector('h3').textContent = 'Saved motions'; const all = mcLoadSaved();
   if (!all.length) list.textContent = 'Nothing saved yet.';
   all.forEach((c, i) => {
     const row = document.createElement('div'); row.className = 'mcRow';
@@ -2645,22 +2672,63 @@ function mcShowList() {
   });
   mcEl('mcPanel').hidden = false;
 }
+function mcExportBVH() {
+  if (!MC.clip) return mkToast('Record something first');
+  const S = 175 / 3.2, fps = MC.clip.fps || 30, f3 = v => (v * S).toFixed(3);
+  // Tuto's skeleton in Tuto units (a person-sized 175 cm Tuto). Limbs rest pointing straight down. Left is the performer's left (+X).
+  const leg = n => ({ n: n + 'UpLeg', o: [n === 'Left' ? 0.16 : -0.16, -0.12, 0], k: [{ n: n + 'LowLeg', o: [0, -0.35, 0], end: [0, -0.44, 0.0] }] });
+  const arm = n => ({ n: n + 'UpperArm', o: [n === 'Left' ? 0.24 : -0.24, 0.14, 0], k: [{ n: n + 'LowerArm', o: [0, -0.27, 0], end: [0, -0.3, 0] }] });
+  const root = { n: 'Hips', o: [0, 0, 0], root: true, k: [leg('Left'), leg('Right'), { n: 'Spine', o: [0, 0.2, 0], k: [{ n: 'Head', o: [0, 0.24, 0], end: [0, 1.24, 0] }, arm('Left'), arm('Right')] }] };
+  const order = [];
+  const walk = (j, d) => {
+    const ind = '\t'.repeat(d);
+    let t = ind + (d ? 'JOINT ' : 'ROOT ') + j.n + '\n' + ind + '{\n' + ind + '\tOFFSET ' + j.o.map(f3).join(' ') + '\n' + ind + '\tCHANNELS ' + (j.root ? '6 Xposition Yposition Zposition Zrotation Xrotation Yrotation' : '3 Zrotation Xrotation Yrotation') + '\n';
+    order.push(j.n);
+    for (const c of j.k || []) t += walk(c, d + 1);
+    if (j.end) t += ind + '\tEnd Site\n' + ind + '\t{\n' + ind + '\t\tOFFSET ' + j.end.map(f3).join(' ') + '\n' + ind + '\t}\n';
+    return t + ind + '}\n';
+  };
+  let out = 'HIERARCHY\n' + walk(root, 0);
+  const st = mcNewState(), F = MC.clip.frames, eu = new THREE.Euler(), id = new MCQ(), rows = [];
+  for (const fr of F) {
+    mcSolve(fr.w, fr.h, MC.flipZ, st, false);
+    if (st.bx === null) { st.bx = st.hx; st.by = st.hy; }
+    const ea = 1 - Math.exp(-0.5 / fps); st.bx += (st.hx - st.bx) * ea; st.by += (st.hy - st.by) * ea;
+    const x = THREE.MathUtils.clamp((st.hx - st.bx) * 4.5, -1.1, 1.1), y = THREE.MathUtils.clamp((st.by - st.hy) * 5.3, 0, 1.6);
+    const Q = { Hips: st.qB, Spine: id, Head: st.qH, LeftUpperArm: st.qAL, LeftLowerArm: st.qEL, RightUpperArm: st.qAR, RightLowerArm: st.qER, LeftUpLeg: st.qLL, LeftLowLeg: st.qKL, RightUpLeg: st.qLR, RightLowLeg: st.qKR };
+    const vals = [f3(x), f3(0.99 + y), f3(0)];
+    for (const n of order) { eu.setFromQuaternion(Q[n], 'ZXY'); vals.push(...[eu.z, eu.x, eu.y].map(a => (a * 180 / Math.PI).toFixed(3))); }
+    rows.push(vals.join(' '));
+  }
+  out += 'MOTION\nFrames: ' + F.length + '\nFrame Time: ' + (1 / fps).toFixed(5) + '\n' + rows.join('\n') + '\n';
+  mkDownload('tuto-motion.bvh', out, 'text/plain');
+}
+function mcShowExport() {
+  if (!MC.clip) return mkToast('Record something first');
+  const list = mcEl('mcList'); list.textContent = ''; mcEl('mcPanel').querySelector('h3').textContent = 'Export this motion';
+  for (const [label, fn] of [['.bvh · Blender, game engines', mcExportBVH], ['.json · landmarks + Tuto bones', mcExport]]) {
+    const row = document.createElement('div'); row.className = 'mcRow';
+    const b = document.createElement('button'); b.className = 'nm'; b.textContent = label;
+    b.addEventListener('click', () => { mcEl('mcPanel').hidden = true; fn(); }); row.appendChild(b); list.appendChild(row);
+  }
+  mcEl('mcPanel').hidden = false;
+}
 function mcExport() {
   if (!MC.clip) return mkToast('Record something first');
   const st = mcNewState(), bones = [], r4 = q => [q.x, q.y, q.z, q.w].map(v => Math.round(v * 10000) / 10000);
   const dur = MC.clip.frames[MC.clip.frames.length - 1].t;
   for (const f of MC.clip.frames) {
     mcSolve(f.w, f.h, MC.flipZ, st, false);
-    bones.push({ t: f.t, hip: f.h, body: r4(st.qB), head: r4(st.qH), armR: r4(st.qAR), armL: r4(st.qAL), legR: r4(st.qLR), legL: r4(st.qLL) });
+    bones.push({ t: f.t, hip: f.h, body: r4(st.qB), head: r4(st.qH), upperArmR: r4(st.qAR), forearmR: r4(st.qER), upperArmL: r4(st.qAL), forearmL: r4(st.qEL), thighR: r4(st.qLR), shinR: r4(st.qKR), thighL: r4(st.qLL), shinL: r4(st.qKL) });
   }
   const out = { format: 'tuto-motion', version: 1, name: MC.clip.name, fps: MC.clip.fps, duration: dur,
-    about: 'landmarks = MediaPipe Pose world landmarks (33 points: x right, y down, z away from camera, metres, hip-centred, [x,y,z,visibility]). bones = the same motion solved for Tuto: unit quaternions (x,y,z,w) in each parent bone space. Arms and legs rest pointing straight down (0,-1,0). Right/left are the performer\'s own sides.',
+    about: 'landmarks = MediaPipe Pose world landmarks (33 points: x right, y down, z away from camera, metres, hip-centred, [x,y,z,visibility]). bones = the same motion solved for Tuto: unit quaternions (x,y,z,w) in each parent bone space. Arms and legs rest pointing straight down (0,-1,0); forearm and shin rotations are relative to the upper bone. Right/left are the performer\'s own sides.',
     landmarks: MC.clip.frames.map(f => ({ t: f.t, p: f.w, hip: f.h })), bones };
   mkDownload('tuto-motion.json', JSON.stringify(out), 'application/json');
 }
 {
   const B = (id, fn) => mcEl(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(); });
-  B('mcRecB', mcToggleRec); B('mcSaveB', mcSave); B('mcClipsB', mcShowList); B('mcExpB', mcExport);
+  B('mcRecB', mcToggleRec); B('mcSaveB', mcSave); B('mcClipsB', mcShowList); B('mcExpB', mcShowExport);
   B('mcPlayB', () => { MC.playing = !MC.playing; mcEl('mcPlayB').querySelector('b').textContent = MC.playing ? '⏸' : '▶'; });
   B('mcDepth', () => { MC.flipZ = !MC.flipZ; mkToast(MC.flipZ ? 'Depth flipped' : 'Depth normal'); });
   mcEl('mcStart').addEventListener('click', mcStartCamera); mcEl('mcDemo').addEventListener('click', mcDemoToggle);
