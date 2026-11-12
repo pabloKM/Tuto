@@ -22,6 +22,16 @@ A tiny 3D platformer made for phones. You play a little guy with an analog stick
 
 Tap the two-people button (top right), then **Start a room** and send the 4-letter code or invite link to a friend. They tap **Join** (or just open the link) and you share the same planet: up to four players, each Tuto in their own colour. Phones connect directly to each other through PeerJS; if a pair can't connect on mobile data, try Wi-Fi.
 
+## Modes: hold Tuto
+
+Press and hold a finger on Tuto and three floppy discs float up in front of him. Walk up to one and press the ✋ button (or just tap it) and he gets zapped inside:
+
+- 🔵 **Tuto AR**: the AR sandbox (`ar/`).
+- 🔴 **Tuto Hoboken**: Stick Head in Hoboken (`nj/`).
+- 🟡 **Tuto Maker**: a tiny Blender inside the platformer. In a white void (Tuto is 4 units tall) press ● to drop a point 3 units in front of him (▲▼ move the pink dot up and down), ╱ to link points with lines, and ▰ (or close the loop) to fill them into a solid plane. Tuto can stand on what you build. The stage grows as you build. ☰ has colours, **Explore** mode, save/load, and export as `.gltf`, `.obj` or `.json`.
+
+The ⏏ button brings you back to the planet.
+
 ## Things to try
 
 - Bounce off the giant nose to land on top of the stick.

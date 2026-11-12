@@ -68,6 +68,47 @@
     padding:6px 22px; transition:opacity .4s; animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 50% { transform:translateX(-50%) scale(1.08); } }
   #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#fff; font-size:22px; padding:20px; text-align:center; }
+  /* ---------- mode menu / modes ---------- */
+  #holdRing { position:fixed; z-index:6; pointer-events:none; border:6px solid #FFD23C; border-radius:50%; opacity:0; transform:translate(-50%,-50%) scale(.3); box-shadow:0 0 0 3px #161216; }
+  #holdRing.go { animation: ringgo .55s linear forwards; }
+  @keyframes ringgo { 0% { opacity:.15; transform:translate(-50%,-50%) scale(.3); } 100% { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+  #flash { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:0; transition:opacity .38s ease-in; }
+  #frameBox { position:fixed; inset:0; z-index:30; background:#161216; display:none; }
+  #frameBox iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:#161216; }
+  body.m-frame #frameBox { display:block; }
+  #eject { position:fixed; z-index:35; display:none; align-items:center; justify-content:center; gap:4px; font:inherit; color:#161216;
+    background:#FFD23C; border:3px solid #161216; box-shadow:2px 3px 0 #161216; padding:0; }
+  #eject b { font-size:22px; font-weight:normal; line-height:1; } #eject span { font-size:17px; }
+  body.m-frame #eject { display:flex; left:0; top:46%; width:34px; height:58px; border-left:0; border-radius:0 16px 16px 0; opacity:.9; } body.m-frame #eject span { display:none; }
+  body.m-maker #eject { display:flex; left:12px; top:12px; height:40px; padding:0 12px; border-radius:14px; }
+  body.m-maker #zap, body.m-maker #mp, body.m-maker #act, body.m-maker #roomChip, body.m-maker #hint, body.m-maker #tap { display:none !important; }
+  /* ---------- Tuto Maker ---------- */
+  #mk { position:fixed; inset:0; z-index:6; pointer-events:none; display:none; }
+  body.m-maker #mk { display:block; }
+  #mk > * { pointer-events:auto; }
+  #mkChip { position:absolute; left:12px; top:60px; font-size:18px; color:#161216; background:#fff; border:3px solid #161216; border-radius:12px; padding:2px 10px; pointer-events:none; white-space:nowrap; }
+  #mkTools { position:absolute; right:12px; top:68px; display:flex; flex-direction:column; gap:7px; align-items:flex-end; }
+  .mkb { width:58px; height:52px; border:3px solid #161216; border-radius:14px; background:#fff; box-shadow:2px 3px 0 #161216; font:inherit; color:#161216; padding:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; -webkit-tap-highlight-color:transparent; }
+  .mkb b { font-size:23px; font-weight:normal; } .mkb small { font-size:12px; margin-top:3px; }
+  .mkb:active, .mkb.on { background:#FFD23C; transform:translate(1px,2px); box-shadow:1px 1px 0 #161216; }
+  #mkPoint { background:#FF9DBB; } #mkPoint small { font-size:11px; }
+  #mkH { display:flex; gap:2px; } #mkH button { width:28px; height:34px; border:3px solid #161216; border-radius:10px; background:#fff; font:inherit; font-size:15px; padding:0; box-shadow:2px 3px 0 #161216; color:#161216; }
+  #mkH button:active { background:#FFD23C; transform:translate(1px,2px); box-shadow:1px 1px 0 #161216; }
+  #mkBuild { position:absolute; left:50%; top:14px; transform:translateX(-50%); font:inherit; font-size:20px; padding:4px 16px; background:#FFD23C; border:3px solid #161216; border-radius:14px; box-shadow:2px 3px 0 #161216; color:#161216; }
+  #mkToast { position:absolute; left:50%; bottom:calc(150px + env(safe-area-inset-bottom)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
+    padding:4px 16px; opacity:0; transition:opacity .25s; pointer-events:none !important; text-align:center; max-width:80vw; }
+  body.mk-explore #mkTools, body.mk-explore #mkChip { display:none; } body:not(.mk-explore) #mkBuild { display:none; }
+  #mkPanel { position:fixed; inset:0; z-index:40; background:rgba(22,18,22,.45); display:flex; align-items:center; justify-content:center; }
+  #mkPanel[hidden] { display:none; }
+  #mkPanel .mp-card { max-height:88vh; overflow:auto; }
+  #mkSw { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin:2px 0 10px; }
+  #mkSw i { width:30px; height:30px; border-radius:50%; border:3px solid #161216; display:block; }
+  #mkSw i.on { box-shadow:0 0 0 3px #fff, 0 0 0 6px #161216; }
+  .mkgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:6px 0; }
+  .mkgrid button { font:inherit; font-size:18px; padding:7px 4px; border:3px solid #161216; border-radius:12px; background:#7ED6A8; box-shadow:2px 2px 0 #161216; color:#161216; }
+  .mkgrid button.wide { grid-column:1 / 3; background:#FDBA1C; font-size:21px; }
+  .mkgrid button:active { transform:translate(1px,1px); box-shadow:1px 1px 0 #161216; }
 </style>
 <script type="importmap">
 { "imports": {
@@ -126,6 +167,40 @@
     <button id="mpClose" class="mp-ghost">Close</button>
   </div>
 </div>
+<div id="holdRing"></div>
+<div id="flash"></div>
+<div id="frameBox"></div>
+<button id="eject" aria-label="Back to the planet"><b>⏏</b><span>Planet</span></button>
+<div id="mk">
+  <div id="mkChip"></div>
+  <div id="mkTools">
+    <button class="mkb" id="mkPoint" aria-label="Place a point 3 units in front of Tuto"><b>●</b><small id="mkPointL">Point</small></button>
+    <div id="mkH"><button id="mkUp" aria-label="Raise the point">▲</button><button id="mkDn" aria-label="Lower the point">▼</button></div>
+    <button class="mkb" id="mkLine" aria-label="Draw a line between points"><b>╱</b><small>Line</small></button>
+    <button class="mkb" id="mkFill" aria-label="Fill the lines into a solid plane"><b>▰</b><small>Plane</small></button>
+    <button class="mkb" id="mkUndo" aria-label="Undo"><b>↶</b><small>Undo</small></button>
+    <button class="mkb" id="mkDel" aria-label="Delete the thing by the pink dot"><b>✕</b><small>Delete</small></button>
+    <button class="mkb" id="mkMenu" aria-label="Colours, save and export"><b>☰</b><small>More</small></button>
+  </div>
+  <button id="mkBuild">🔨 Build</button>
+  <div id="mkToast"></div>
+</div>
+<div id="mkPanel" hidden>
+  <div class="mp-card">
+    <h3>Tuto Maker</h3>
+    <div id="mkSw"></div>
+    <div class="mkgrid">
+      <button class="wide" id="mkExplore">▶ Explore it as Tuto</button>
+      <button id="mkSaveB">💾 Save</button><button id="mkLoadB">📂 Load</button>
+      <button id="mkGltf">⬇ .gltf</button><button id="mkObj">⬇ .obj</button>
+      <button id="mkJson">⬇ .json</button><button id="mkCopy">📋 Copy</button>
+      <button class="wide" id="mkImport" style="background:#fff;font-size:18px">📥 Open a .json level</button>
+    </div>
+    <button id="mkNew" class="mp-ghost">Start a new level</button>
+    <button id="mkClose" class="mp-ghost">Close</button>
+  </div>
+</div>
+<input type="file" id="mkFile" accept=".json,application/json" hidden>
 <div id="err">This needs WebGL to run.</div>
 
 <script type="module">
@@ -595,7 +670,7 @@ function updateSparks(dt) {
 // two fingers pinch to zoom. Mouse: drag to orbit, wheel to zoom.
 let orbitDelta = 0, pitchDelta = 0;
 let camPitch = 0.46, camDist = 6.7;            // angle above the ground, distance from hero
-const PITCH_MIN = 0.12, PITCH_MAX = 1.4, DIST_MIN = 2.6, DIST_MAX = 18;
+let PITCH_MIN = 0.12, PITCH_MAX = 1.4, DIST_MIN = 2.6, DIST_MAX = 18;
 const camPtrs = new Map();
 let pinchD = 0;
 const cvs = renderer.domElement;
@@ -1306,7 +1381,7 @@ musicBtn.addEventListener('pointerdown', e => {
   try { localStorage.setItem('stickhead-music', musicOn ? 'on' : 'off'); } catch (err) { }
   musicOn ? bgm.play().catch(() => { }) : bgm.pause();
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden) bgm.pause(); else if (mode !== 'intro') playMusic(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) bgm.pause(); else if (mode !== 'intro' && modeKind !== 'iframe') playMusic(); });
 
 function startReveal() {
   if (mode !== 'intro') return;
@@ -1515,7 +1590,8 @@ function update(dt) {
   // action button: pick up / throw
   if (input.act) {
     input.act = false;
-    if (holding) doThrow();
+    if (menuReach && !warp) chooseDisc(menuReach);
+    else if (holding) doThrow();
     else if (!riding && !heldBy && grounded) { const g = findGrab(); if (g) grab(g); }
   }
   // jump / double-jump flip / hop off a dinosaur
@@ -1561,7 +1637,7 @@ function update(dt) {
   if (holding && holding.kind === 'dino') {
     const d = holding.d; d.up.copy(up); d.facing.copy(facing); d.h = height + HOLD_H; d.walkAmt = 0;
   }
-  holdAmt += ((holding ? 1 : 0) - holdAmt) * Math.min(1, 12 * dt);
+  holdAmt += (((holding || warp) ? 1 : 0) - holdAmt) * Math.min(1, 12 * dt);
   rideAmt += ((riding ? 1 : 0) - rideAmt) * Math.min(1, 12 * dt);
 
   // giant face: eyes / mouth close when anyone stands on them
@@ -1624,7 +1700,8 @@ function update(dt) {
   // dinosaurs (the host — or a solo player — runs them; guests show what the host sends)
   updateDinos(dt, !Net.active || Net.isHost);
   // action button hint
-  actBtn.classList.toggle('ready', !!holding || (!riding && !heldBy && grounded && controls && !!findGrab()));
+  menuTick(dt);
+  actBtn.classList.toggle('ready', !!holding || (!!menuReach && !warp) || (!riding && !heldBy && grounded && controls && !!findGrab()));
   actBtn.classList.toggle('throw', !!holding);
 
   // electric spark trail
@@ -1737,11 +1814,562 @@ document.getElementById('mpCopy').addEventListener('click', async () => {
   if (code) setTimeout(() => netConnect(code), 300);
 }
 
+// ======================= MODES: hold Tuto -> three floppy discs =======================
+// hold a finger on Tuto and three discs float up in front of him. Grab one (hand button, or tap it)
+// and he is zapped into that mode: blue = Tuto AR, red = Tuto Hoboken, yellow = Tuto Maker.
+const DISCS = [
+  { id: 'ar', word: 'AR', color: 0x2F86E8 },
+  { id: 'nj', word: 'HOBOKEN', color: 0xE8402E },
+  { id: 'mk', word: 'MAKER', color: 0xFFD23C },
+];
+const hexCss = c => '#' + c.toString(16).padStart(6, '0');
+let modeKind = 'planet';          // 'planet' | 'iframe' | 'maker'
+let menu = null, menuReach = null, warp = null, leaving = false;
+const flashEl = document.getElementById('flash'), frameBox = document.getElementById('frameBox');
+const holdRing = document.getElementById('holdRing');
+const flashTo = (css, on) => { if (css) flashEl.style.background = css; flashEl.style.opacity = on ? 1 : 0; };
+
+const labelTex = {};
+function floppyLabel(d) {
+  if (labelTex[d.id]) return labelTex[d.id];
+  const c = document.createElement('canvas'); c.width = 330; c.height = 200; const x = c.getContext('2d');
+  x.fillStyle = '#FFF8EC'; x.fillRect(0, 0, 330, 200);
+  x.fillStyle = hexCss(d.color); x.fillRect(0, 0, 330, 30);
+  x.strokeStyle = '#B9B2A6'; x.lineWidth = 3; for (let y = 150; y < 190; y += 18) { x.beginPath(); x.moveTo(24, y); x.lineTo(306, y); x.stroke(); }
+  x.fillStyle = '#161216'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = "50px 'Patrick Hand', 'Comic Sans MS', cursive"; x.fillText('TUTO', 165, 62);
+  let fs = 88; x.font = `bold ${fs}px 'Patrick Hand', 'Comic Sans MS', cursive`;
+  while (x.measureText(d.word).width > 290 && fs > 30) { fs -= 4; x.font = `bold ${fs}px 'Patrick Hand', 'Comic Sans MS', cursive`; }
+  x.fillText(d.word, 165, 118);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return (labelTex[d.id] = t);
+}
+function buildFloppy(d) {
+  const root = new THREE.Group(), tilt = new THREE.Group(); root.add(tilt);
+  const body = mesh(new RoundedBoxGeometry(0.9, 0.9, 0.08, 3, 0.05), d.color);
+  const shutter = mesh(new THREE.BoxGeometry(0.5, 0.3, 0.1), 0xC8CDD6); shutter.position.set(0.04, 0.29, 0);
+  const win = mesh(new THREE.BoxGeometry(0.1, 0.2, 0.11), COL.ink, false); win.position.set(0.2, 0.29, 0);
+  const lm = new THREE.MeshBasicMaterial({ map: floppyLabel(d) }); lm.userData.outlineParameters = { visible: false };
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.42), lm); label.position.set(0, -0.19, 0.045);
+  tilt.add(body, shutter, win, label);
+  return { d, root, tilt, base: new THREE.Vector3(), hi: 1, pop: 0 };
+}
+function openMenu() {
+  if (menu || warp || modeKind !== 'planet' || mode !== 'play' || !controls || riding || heldBy || holding) return;
+  const rightV = new THREE.Vector3().copy(camFwd).cross(up).normalize();
+  const base = hero.root.position.clone().addScaledVector(up, 1.55).addScaledVector(facing, 1.45);
+  menu = { items: [], t: 0 };
+  DISCS.forEach((d, i) => {
+    const f = buildFloppy(d);
+    f.base.copy(base).addScaledVector(rightV, (i - 1) * 1.1).addScaledVector(up, i === 1 ? 0.08 : -0.06);
+    f.root.position.copy(f.base); f.root.scale.setScalar(0.001); scene.add(f.root); menu.items.push(f);
+  });
+  setExpr('shocked', 900, simT);
+}
+function closeMenu() {
+  if (!menu) return;
+  for (const f of menu.items) { scene.remove(f.root); f.root.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  menu = null; menuReach = null;
+}
+function chooseDisc(f) {
+  if (warp) return;
+  warp = { f, t: 0 };
+  setExpr('shocked', 1400, simT);
+  setTimeout(() => flashTo(hexCss(f.d.color), true), 380);
+  setTimeout(() => switchTo(f.d.id), 820);
+}
+const easeOutBack = k => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+function menuTick(dt) {
+  if (!menu) { menuReach = null; return; }
+  menu.t += dt; if (warp) warp.t += dt;
+  const chest = hero.root.position.clone().addScaledVector(up, 0.9);
+  if (!warp && chest.distanceTo(menu.items[1].base) > 7) { closeMenu(); return; }
+  const headTop = hero.root.position.clone().addScaledVector(up, 2.0);
+  let best = null, bd = 1.7;
+  menu.items.forEach((f, i) => {
+    const k = Math.max(0, Math.min(1, (menu.t - i * 0.12) * 3.2));
+    f.pop = k <= 0 ? 0 : easeOutBack(k);
+    const bob = Math.sin(simT / 1000 * 2 + i * 2.1) * 0.07;
+    f.root.position.copy(f.base).addScaledVector(up, bob);
+    f.tilt.rotation.set(0, 0, (1 - i) * 0.12 + Math.sin(simT / 1000 * 1.5 + i) * 0.05);
+    const dist = chest.distanceTo(f.base);
+    if (!warp && dist < bd) { bd = dist; best = f; }
+  });
+  menu.items.forEach(f => {
+    let s = f.pop;
+    if (warp) {
+      if (f === warp.f) {
+        const k = Math.min(1, warp.t / 0.7), e = ease(k);
+        f.root.position.lerpVectors(f.base, headTop, e); f.tilt.rotation.y = warp.t * 14; s = f.pop * (1 - 0.75 * e);
+      } else s = Math.max(0, f.pop * (1 - warp.t * 4));
+    } else { f.hi += ((f === best ? 1.22 : 1) - f.hi) * Math.min(1, 10 * dt); s *= f.hi; }
+    f.root.up.copy(up); f.root.lookAt(camera.position);
+    f.root.scale.setScalar(Math.max(0.001, s));
+  });
+  menuReach = best;
+}
+// --- press and hold on Tuto
+function heroScreen() {
+  const p = hero.root.position.clone().addScaledVector(up, 0.8), q = p.clone().addScaledVector(up, 0.9);
+  p.project(camera); q.project(camera);
+  const X = v => (v.x * 0.5 + 0.5) * innerWidth, Y = v => (-v.y * 0.5 + 0.5) * innerHeight;
+  return { x: X(p), y: Y(p), r: Math.max(46, Math.hypot(X(q) - X(p), Y(q) - Y(p)) * 1.15) };
+}
+let holdT = 0, holdPt = null;
+const stopHold = () => { clearTimeout(holdT); holdT = 0; holdPt = null; holdRing.classList.remove('go'); };
+cvs.addEventListener('pointerdown', e => {
+  if (modeKind !== 'planet' || mode !== 'play' || !controls || warp) return;
+  if (menu) {                                                   // tap a disc directly
+    const ndc = new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    const rc = new THREE.Raycaster(); rc.setFromCamera(ndc, camera);
+    const hit = rc.intersectObjects(menu.items.map(f => f.root), true)[0];
+    if (hit) { const f = menu.items.find(f => f.root === hit.object || f.root.getObjectById(hit.object.id)); if (f) { chooseDisc(f); return; } }
+  }
+  if (camPtrs.size !== 1) return;
+  const s = heroScreen();
+  if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > s.r) return;
+  holdPt = { x: e.clientX, y: e.clientY };
+  holdRing.style.left = s.x + 'px'; holdRing.style.top = s.y + 'px'; holdRing.style.width = holdRing.style.height = (s.r * 1.5) + 'px';
+  holdRing.classList.remove('go'); void holdRing.offsetWidth; holdRing.classList.add('go');
+  holdT = setTimeout(() => { holdT = 0; holdRing.classList.remove('go'); if (camPtrs.size === 1) { if (menu) closeMenu(); else openMenu(); } }, 550);
+});
+cvs.addEventListener('pointermove', e => { if (holdPt && Math.hypot(e.clientX - holdPt.x, e.clientY - holdPt.y) > 14) stopHold(); });
+cvs.addEventListener('pointerup', stopHold); cvs.addEventListener('pointercancel', stopHold);
+
+// --- switching modes
+const resetInputs = () => { input.jump = input.act = false; touchVec.x = touchVec.y = 0; stickId = null; keys.clear(); jumpHeld = false; camPtrs.clear(); orbitDelta = pitchDelta = 0; stopHold(); };
+let curFrame = null, curDiscColor = '#FFD23C';
+const FRAME_SRC = { ar: 'ar/index.html', nj: 'nj/index.html' };
+function startFrame(id) {
+  bgm.pause();
+  const f = document.createElement('iframe');
+  f.src = FRAME_SRC[id]; f.title = id === 'ar' ? 'Tuto AR' : 'Tuto Hoboken';
+  f.allow = 'camera; microphone; autoplay; fullscreen; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; clipboard-write';
+  frameBox.appendChild(f); curFrame = f;
+}
+function stopFrame() { if (curFrame) { curFrame.src = 'about:blank'; curFrame.remove(); curFrame = null; } }
+function switchTo(id) {
+  closeMenu(); warp = null; resetInputs();
+  const d = DISCS.find(x => x.id === id); curDiscColor = hexCss(d.color);
+  if (id === 'mk') { startMaker(); modeKind = 'maker'; document.body.classList.add('m-maker'); }
+  else { startFrame(id); modeKind = 'iframe'; document.body.classList.add('m-frame'); }
+  setTimeout(() => flashTo(null, false), 150);
+}
+function leaveMode() {
+  if (modeKind === 'planet' || leaving) return; leaving = true;
+  flashTo(curDiscColor, true);
+  setTimeout(() => {
+    if (modeKind === 'maker') stopMaker(); else stopFrame();
+    document.body.classList.remove('m-maker', 'm-frame', 'mk-explore');
+    modeKind = 'planet'; resetInputs(); last = performance.now(); playMusic();
+    setExpr('smile', 1500, simT); flashTo(null, false); leaving = false;
+  }, 420);
+}
+document.getElementById('eject').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); leaveMode(); });
+
+// ======================= TUTO MAKER =======================
+// A tiny Blender inside the platformer. White void, Tuto is 4 units tall.
+// ● drops a point 3 units in front of him, ╱ links points, ▰ fills the loop into a solid plane.
+const MK_SCALE = 4 / 3.2;                        // Tuto's natural height is 3.2
+const MKC = [0xFF6B5B, 0xFFB43C, 0xFFE45E, 0x7ED6A8, 0x4FC3F7, 0x8C7BFF, 0xF3EEE6, 0x3A3542];
+const MKSAVE = 'tuto-maker-level-v1';
+const MK = { ready: false, data: null, undo: [], chain: [], color: 2, ch: 0, explore: false, t: 0,
+  pos: new THREE.Vector3(), vy: 0, grounded: true, airT: 0, flipT: -1, usedFlip: false, face: 0, yaw: Math.PI, pitch: 0.5,
+  camT: new THREE.Vector3(), rect: { x0: -12, x1: 12, z0: -12, z1: 12 }, tgt: { x0: -12, x1: 12, z0: -12, z1: 12 }, solids: [], saved: null };
+const mkEmpty = () => ({ v: 1, next: 1, points: [], edges: [], planes: [] });
+const noOl = m => { m.userData.outlineParameters = { visible: false }; return m; };
+const snapTo = (v, s = 0.5) => Math.round(v / s) * s;
+const mkById = id => MK.data.points.find(p => p.id === id);
+const mkEl = id => document.getElementById(id);
+
+// ear-clipping triangulation of a (roughly flat) polygon given as [x,y,z] points
+function triPoly(P) {
+  const n = P.length; if (n < 3) return [];
+  let nx = 0, ny = 0, nz = 0;
+  for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]); }
+  const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+  const pr = P.map(p => ax >= ay && ax >= az ? [p[1], p[2]] : ay >= az ? [p[2], p[0]] : [p[0], p[1]]);
+  let area = 0; for (let i = 0; i < n; i++) { const a = pr[i], b = pr[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+  const idx = [...Array(n).keys()]; if (area < 0) idx.reverse();
+  const cr = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const inTri = (p, a, b, c) => cr(a, b, p) >= -1e-9 && cr(b, c, p) >= -1e-9 && cr(c, a, p) >= -1e-9;
+  const out = []; let guard = 0;
+  while (idx.length > 3 && guard++ < 400) {
+    let clipped = false;
+    for (let i = 0; i < idx.length; i++) {
+      const i0 = idx[(i + idx.length - 1) % idx.length], i1 = idx[i], i2 = idx[(i + 1) % idx.length];
+      if (cr(pr[i0], pr[i1], pr[i2]) <= 1e-9) continue;
+      let ok = true;
+      for (const j of idx) { if (j === i0 || j === i1 || j === i2) continue; if (inTri(pr[j], pr[i0], pr[i1], pr[i2])) { ok = false; break; } }
+      if (!ok) continue;
+      out.push([i0, i1, i2]); idx.splice(i, 1); clipped = true; break;
+    }
+    if (!clipped) break;
+  }
+  if (idx.length === 3) out.push([idx[0], idx[1], idx[2]]);
+  else for (let i = 1; i < idx.length - 1; i++) out.push([idx[0], idx[i], idx[i + 1]]);
+  return out;
+}
+
+function mkInit() {
+  if (MK.ready) return; MK.ready = true;
+  const sc = MK.scene = new THREE.Scene();
+  sc.background = new THREE.Color(0xffffff); sc.fog = new THREE.Fog(0xffffff, 80, 280);
+  MK.cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 600);
+  sc.add(new THREE.AmbientLight(0xffffff, 1.1));
+  const sn = new THREE.DirectionalLight(0xffffff, 2.3); sn.position.set(18, 40, 12); sc.add(sn);
+  // stage floor + grid + axes (red X, blue Z) + border; all follow MK.rect, which grows with the build
+  MK.floor = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), noOl(new THREE.MeshBasicMaterial({ color: 0xEEEFF3 })));
+  MK.floor.position.y = -0.03; sc.add(MK.floor);
+  const mkLines = (n, col) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); return g; };
+  MK.grid = new THREE.LineSegments(mkLines(1400), new THREE.LineBasicMaterial({ color: 0xD2D4DC })); MK.grid.frustumCulled = false; sc.add(MK.grid);
+  MK.axX = new THREE.Line(mkLines(2), new THREE.LineBasicMaterial({ color: 0xE5484D })); MK.axZ = new THREE.Line(mkLines(2), new THREE.LineBasicMaterial({ color: 0x3E63DD }));
+  MK.border = new THREE.LineLoop(mkLines(4), new THREE.LineBasicMaterial({ color: 0x161216 }));
+  for (const l of [MK.axX, MK.axZ, MK.border]) { l.frustumCulled = false; sc.add(l); }
+  MK.axX.position.y = MK.axZ.position.y = 0.02;
+  // Tuto
+  MK.hero = buildCharacter(); MK.hero.anim = newAnim(); MK.hero.root.scale.setScalar(MK_SCALE); sc.add(MK.hero.root);
+  MK.shadow = new THREE.Mesh(new THREE.CircleGeometry(0.42 * MK_SCALE, 24).rotateX(-Math.PI / 2), noOl(new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0.2, depthWrite: false })));
+  sc.add(MK.shadow);
+  // content groups
+  MK.gP = new THREE.Group(); MK.gE = new THREE.Group(); MK.gF = new THREE.Group(); sc.add(MK.gF, MK.gE, MK.gP);
+  // the pink dot: where a new point would go, 3 units in front of Tuto
+  const pink = new THREE.MeshBasicMaterial({ color: 0xFF3D7F, transparent: true, opacity: 0.9, depthTest: false }); noOl(pink);
+  const pinkSoft = new THREE.MeshBasicMaterial({ color: 0xFF3D7F, transparent: true, opacity: 0.5 }); noOl(pinkSoft);
+  MK.ghost = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), pink); MK.ghost.renderOrder = 5;
+  MK.ring = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.55, 32).rotateX(-Math.PI / 2), pinkSoft);
+  MK.drop = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1, 0.05), pinkSoft);
+  const snapM = new THREE.MeshBasicMaterial({ color: 0xFFE45E, transparent: true, opacity: 0.55, depthTest: false }); noOl(snapM);
+  MK.snapMark = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 12), snapM); MK.snapMark.renderOrder = 4;
+  MK.rubber = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), noOl(new THREE.MeshBasicMaterial({ color: 0xFF3D7F })));
+  MK.gU = new THREE.Group(); MK.gU.add(MK.ghost, MK.ring, MK.drop, MK.snapMark, MK.rubber); sc.add(MK.gU);
+  mkApplyRect(true);
+}
+function mkApplyRect() {
+  const r = MK.rect;
+  MK.floor.scale.set(r.x1 - r.x0, 1, r.z1 - r.z0); MK.floor.position.x = (r.x0 + r.x1) / 2; MK.floor.position.z = (r.z0 + r.z1) / 2;
+  const step = Math.max(2, Math.ceil(Math.max(r.x1 - r.x0, r.z1 - r.z0) / 300 / 2) * 2);
+  const a = MK.grid.geometry.attributes.position.array; let n = 0;
+  for (let x = Math.ceil(r.x0 / step) * step; x <= r.x1 && n < 1380; x += step) { a[n * 3] = x; a[n * 3 + 1] = 0.01; a[n * 3 + 2] = r.z0; n++; a[n * 3] = x; a[n * 3 + 1] = 0.01; a[n * 3 + 2] = r.z1; n++; }
+  for (let z = Math.ceil(r.z0 / step) * step; z <= r.z1 && n < 1380; z += step) { a[n * 3] = r.x0; a[n * 3 + 1] = 0.01; a[n * 3 + 2] = z; n++; a[n * 3] = r.x1; a[n * 3 + 1] = 0.01; a[n * 3 + 2] = z; n++; }
+  MK.grid.geometry.attributes.position.needsUpdate = true; MK.grid.geometry.setDrawRange(0, n);
+  const set = (l, arr) => { const p = l.geometry.attributes.position.array; arr.forEach((v, i) => p[i] = v); l.geometry.attributes.position.needsUpdate = true; };
+  set(MK.axX, [r.x0, 0, 0, r.x1, 0, 0]); set(MK.axZ, [0, 0, r.z0, 0, 0, r.z1]);
+  set(MK.border, [r.x0, 0.03, r.z0, r.x1, 0.03, r.z0, r.x1, 0.03, r.z1, r.x0, 0.03, r.z1]);
+}
+// the stage grows as the build grows
+function mkBounds() {
+  let x0 = -12, x1 = 12, z0 = -12, z1 = 12;
+  for (const p of MK.data.points) { x0 = Math.min(x0, p.p[0] - 10); x1 = Math.max(x1, p.p[0] + 10); z0 = Math.min(z0, p.p[2] - 10); z1 = Math.max(z1, p.p[2] + 10); }
+  const f = v => Math.floor(v / 4) * 4, c = v => Math.ceil(v / 4) * 4;
+  MK.tgt = { x0: f(x0), x1: c(x1), z0: f(z0), z1: c(z1) };
+}
+
+// --- meshes from data
+const planeMats = {};
+const mkPlaneMat = ci => planeMats[ci] || (planeMats[ci] = noOl(new THREE.MeshToonMaterial({ color: MKC[ci % MKC.length], gradientMap: ramp, side: THREE.DoubleSide })));
+const edgeMat = noOl(new THREE.MeshBasicMaterial({ color: 0x161216 }));
+const edgeGeo = new THREE.BoxGeometry(1, 1, 1);
+function placeEdge(m, a, b, w) {
+  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), len = A.distanceTo(B);
+  m.position.copy(A).add(B).multiplyScalar(0.5); m.scale.set(w, w, Math.max(0.001, len));
+  m.lookAt(B);
+}
+function mkClearGroup(g) { while (g.children.length) { const c = g.children[0]; g.remove(c); if (c.geometry && c.geometry !== edgeGeo && !c.userData.shared) c.geometry.dispose(); } }
+function mkPolys() {
+  return MK.data.planes.map(pl => {
+    const pts = pl.ids.map(mkById).filter(Boolean).map(p => p.p);
+    return { pts, tris: triPoly(pts), c: pl.c };
+  }).filter(o => o.pts.length >= 3);
+}
+const ptGeo = new THREE.SphereGeometry(0.22, 14, 10);
+function mkRebuild() {
+  const D = MK.data;
+  mkClearGroup(MK.gP); mkClearGroup(MK.gE); mkClearGroup(MK.gF);
+  MK.solids = [];
+  for (const o of mkPolys()) {
+    const pos = new Float32Array(o.tris.length * 9); let k = 0;
+    for (const t of o.tris) for (const i of t) { pos[k++] = o.pts[i][0]; pos[k++] = o.pts[i][1]; pos[k++] = o.pts[i][2]; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mkPlaneMat(o.c)); MK.gF.add(m); MK.solids.push(m);
+  }
+  for (const e of D.edges) {
+    const a = mkById(e[0]), b = mkById(e[1]); if (!a || !b) continue;
+    const m = new THREE.Mesh(edgeGeo, edgeMat); m.userData.shared = true; placeEdge(m, a.p, b.p, 0.07); MK.gE.add(m);
+  }
+  for (const p of D.points) {
+    const inChain = MK.chain.includes(p.id), first = MK.chain[0] === p.id;
+    const m = new THREE.Mesh(ptGeo, toon(first ? 0xFF3D7F : inChain ? 0xFFB43C : 0xFFE45E)); m.userData.shared = true;
+    m.position.set(...p.p); m.scale.setScalar(inChain ? 1.3 : 1); MK.gP.add(m);
+  }
+  MK.gP.visible = !MK.explore;
+  mkBounds();
+  mkEl('mkChip').textContent = `● ${D.points.length}   ╱ ${D.edges.length}   ▰ ${D.planes.length}`;
+  mkEl('mkPointL').textContent = MK.ch === 0 ? 'Point' : 'Point ' + (MK.ch > 0 ? '↑' : '↓') + Math.abs(MK.ch);
+  mkEl('mkLine').classList.toggle('on', MK.chain.length > 0);
+}
+function mkAutosave() { try { localStorage.setItem(MKSAVE, JSON.stringify(MK.data)); return true; } catch (e) { return false; } }
+function mkCommit() { mkRebuild(); mkAutosave(); }
+function mkPush() { MK.undo.push(JSON.stringify({ d: MK.data, c: MK.chain })); if (MK.undo.length > 80) MK.undo.shift(); }
+function mkUndo() {
+  const s = MK.undo.pop(); if (!s) return mkToast('Nothing to undo');
+  const o = JSON.parse(s); MK.data = o.d; MK.chain = o.c; mkCommit(); mkToast('Undone');
+}
+let mkToastT = 0;
+function mkToast(t) { const el = mkEl('mkToast'); el.textContent = t; el.style.opacity = 1; clearTimeout(mkToastT); mkToastT = setTimeout(() => { el.style.opacity = 0; }, 2200); }
+
+// --- the pink dot and the tools
+function mkCursor() {
+  return new THREE.Vector3(snapTo(MK.pos.x + Math.sin(MK.face) * 3), snapTo(MK.pos.y + MK.ch), snapTo(MK.pos.z + Math.cos(MK.face) * 3));
+}
+function mkNearest(c, r) {
+  let best = null, bd = r;
+  for (const p of MK.data.points) { const d = Math.hypot(p.p[0] - c.x, p.p[1] - c.y, p.p[2] - c.z); if (d < bd) { bd = d; best = p; } }
+  return best;
+}
+const mkAddEdge = (a, b) => { if (!MK.data.edges.some(e => (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a))) MK.data.edges.push([a, b]); };
+function mkPlacePoint() {
+  const c = mkCursor();
+  if (MK.data.points.some(p => Math.hypot(p.p[0] - c.x, p.p[1] - c.y, p.p[2] - c.z) < 0.05)) return mkToast('There is already a point there');
+  mkPush(); MK.data.points.push({ id: MK.data.next++, p: [c.x, c.y, c.z] }); mkCommit();
+}
+function mkFillChain() { MK.data.planes.push({ ids: [...MK.chain], c: MK.color }); MK.chain = []; mkCommit(); mkToast('Plane made!'); }
+function mkLine() {
+  const np = mkNearest(mkCursor(), 1.6);
+  if (!np) return mkToast('Put the pink dot next to a point');
+  const ch = MK.chain;
+  if (!ch.length) { mkPush(); ch.push(np.id); mkCommit(); return mkToast('Now pick the next point'); }
+  const last = ch[ch.length - 1];
+  if (np.id === last) { mkPush(); MK.chain = []; mkCommit(); return mkToast(ch.length > 1 ? 'Line finished' : 'Cancelled'); }
+  if (np.id === ch[0] && ch.length >= 3) { mkPush(); mkAddEdge(last, np.id); return mkFillChain(); }
+  if (ch.includes(np.id)) return mkToast('Already in this line');
+  mkPush(); mkAddEdge(last, np.id); ch.push(np.id); mkCommit();
+  mkToast(ch.length >= 3 ? 'Go back to the first point, or press Plane' : 'Pick the next point');
+}
+function mkFill() {
+  if (MK.chain.length < 3) return mkToast('Link 3 or more points with Line first');
+  mkPush(); mkAddEdge(MK.chain[MK.chain.length - 1], MK.chain[0]); mkFillChain();
+}
+function mkDelete() {
+  const c = mkCursor(), D = MK.data, np = mkNearest(c, 1.6);
+  if (np) {
+    mkPush();
+    D.points = D.points.filter(p => p.id !== np.id); D.edges = D.edges.filter(e => e[0] !== np.id && e[1] !== np.id);
+    D.planes = D.planes.filter(pl => !pl.ids.includes(np.id)); MK.chain = MK.chain.filter(i => i !== np.id);
+    mkCommit(); return mkToast('Point deleted');
+  }
+  let bi = -1, bd = 1.2;
+  D.edges.forEach((e, i) => {
+    const a = mkById(e[0]), b = mkById(e[1]); if (!a || !b) return;
+    const A = new THREE.Vector3(...a.p), B = new THREE.Vector3(...b.p), seg = new THREE.Line3(A, B), q = seg.closestPointToPoint(c, true, new THREE.Vector3());
+    const d = q.distanceTo(c); if (d < bd) { bd = d; bi = i; }
+  });
+  if (bi >= 0) { mkPush(); D.edges.splice(bi, 1); mkCommit(); return mkToast('Line deleted'); }
+  let pi = -1; bd = 5;
+  D.planes.forEach((pl, i) => {
+    const pts = pl.ids.map(mkById).filter(Boolean); if (!pts.length) return;
+    const cen = new THREE.Vector3(); pts.forEach(p => cen.add(new THREE.Vector3(...p.p))); cen.divideScalar(pts.length);
+    const d = cen.distanceTo(c); if (d < bd) { bd = d; pi = i; }
+  });
+  if (pi >= 0) { mkPush(); D.planes.splice(pi, 1); mkCommit(); return mkToast('Plane deleted'); }
+  mkToast('Nothing near the pink dot');
+}
+const mkRay = new THREE.Raycaster(); mkRay.ray.direction.set(0, -1, 0);
+function mkSurfaceBelow(x, yTop, z) {
+  let best = 0;
+  if (MK.solids.length) {
+    mkRay.ray.origin.set(x, yTop, z); mkRay.far = 400;
+    for (const h of mkRay.intersectObjects(MK.solids, false)) { if (h.face && Math.abs(h.face.normal.y) > 0.35) { best = Math.max(best, h.point.y); break; } }
+  }
+  return best;
+}
+
+// --- save / load / export
+function mkLoadText(text) {
+  try {
+    const o = JSON.parse(text);
+    if (!o || !Array.isArray(o.points) || !Array.isArray(o.planes)) throw 0;
+    const D = mkEmpty();
+    D.points = o.points.filter(p => p && Array.isArray(p.p) && p.p.length === 3 && p.p.every(Number.isFinite)).map(p => ({ id: p.id | 0, p: p.p.slice() }));
+    const ok = new Set(D.points.map(p => p.id));
+    D.edges = (o.edges || []).filter(e => Array.isArray(e) && ok.has(e[0]) && ok.has(e[1])).map(e => [e[0], e[1]]);
+    D.planes = o.planes.filter(pl => pl && Array.isArray(pl.ids) && pl.ids.every(i => ok.has(i))).map(pl => ({ ids: pl.ids.slice(), c: (pl.c | 0) % MKC.length }));
+    D.next = Math.max(o.next | 0, ...D.points.map(p => p.id + 1), 1);
+    MK.data = D; MK.chain = []; MK.undo = []; mkCommit(); return true;
+  } catch (e) { return false; }
+}
+function mkOBJ() {
+  let s = '# Tuto Maker level. +Y is up, 1 unit = a quarter of Tuto (Tuto is 4 units tall)\n', n = 1;
+  mkPolys().forEach((o, i) => {
+    const col = MKC[o.c % MKC.length], r = ((col >> 16) & 255) / 255, g = ((col >> 8) & 255) / 255, b = (col & 255) / 255;
+    s += `o plane_${i + 1}\n`;
+    o.pts.forEach(p => { s += `v ${p[0]} ${p[1]} ${p[2]} ${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)}\n`; });
+    o.tris.forEach(t => { s += `f ${t[0] + n} ${t[1] + n} ${t[2] + n}\n`; });
+    n += o.pts.length;
+  });
+  return s;
+}
+function mkGLTF() {
+  const polys = mkPolys(); if (!polys.length) return null;
+  let total = 0; polys.forEach(o => { total += o.pts.length * 12 + o.tris.length * 12; });
+  const buf = new ArrayBuffer(total), dv = new DataView(buf);
+  const views = [], accs = [], prims = [], mats = [], matIdx = {}; let off = 0;
+  polys.forEach(o => {
+    const pOff = off, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+    o.pts.forEach(p => { for (let k = 0; k < 3; k++) { dv.setFloat32(off, p[k], true); off += 4; mn[k] = Math.min(mn[k], p[k]); mx[k] = Math.max(mx[k], p[k]); } });
+    const iOff = off; o.tris.forEach(t => t.forEach(i => { dv.setUint32(off, i, true); off += 4; }));
+    views.push({ buffer: 0, byteOffset: pOff, byteLength: o.pts.length * 12, target: 34962 }, { buffer: 0, byteOffset: iOff, byteLength: o.tris.length * 12, target: 34963 });
+    accs.push({ bufferView: views.length - 2, componentType: 5126, count: o.pts.length, type: 'VEC3', min: mn, max: mx }, { bufferView: views.length - 1, componentType: 5125, count: o.tris.length * 3, type: 'SCALAR' });
+    if (matIdx[o.c] === undefined) {
+      const col = MKC[o.c % MKC.length], lin = sh => Math.pow(((col >> sh) & 255) / 255, 2.2);
+      matIdx[o.c] = mats.length; mats.push({ name: 'color' + o.c, doubleSided: true, pbrMetallicRoughness: { baseColorFactor: [lin(16), lin(8), lin(0), 1], metallicFactor: 0, roughnessFactor: 1 } });
+    }
+    prims.push({ attributes: { POSITION: accs.length - 2 }, indices: accs.length - 1, material: matIdx[o.c] });
+  });
+  let bin = ''; const u8 = new Uint8Array(buf); for (let i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+  return JSON.stringify({ asset: { version: '2.0', generator: 'Tuto Maker', extras: { tutoHeightUnits: 4 } }, scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0, name: 'TutoMakerLevel' }],
+    meshes: [{ primitives: prims }], materials: mats, accessors: accs, bufferViews: views, buffers: [{ byteLength: total, uri: 'data:application/octet-stream;base64,' + btoa(bin) }] });
+}
+async function mkDownload(name, text, mime) {
+  if (text == null) return mkToast('Build a plane first');
+  try {
+    const file = new File([text], name, { type: mime });
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return mkToast('Shared ' + name); }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: mime })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000); mkToast('Saved ' + name);
+  } catch (e) { mkToast('Could not download here, try Copy'); }
+}
+async function mkCopy() {
+  const text = JSON.stringify(MK.data);
+  try { await navigator.clipboard.writeText(text); return mkToast('Level copied'); } catch (e) { }
+  try { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); mkToast(ok ? 'Level copied' : 'Copy was blocked'); } catch (e) { mkToast('Copy was blocked'); }
+}
+
+// --- enter / leave / frame update
+function startMaker() {
+  mkInit();
+  if (!MK.data) {
+    MK.data = mkEmpty();
+    try { const s = localStorage.getItem(MKSAVE); if (s) mkLoadText(s); } catch (e) { }
+  }
+  MK.saved = { camDist, DIST_MIN, DIST_MAX };
+  camDist = 18; DIST_MIN = 7; DIST_MAX = 90;
+  MK.pos.set(0, 0, 0); MK.face = 0; MK.yaw = Math.PI; MK.pitch = 0.5; MK.vy = 0; MK.grounded = true; MK.flipT = -1; MK.ch = 0; MK.chain = [];
+  MK.camT.set(0, 2.2, 0); MK.explore = false; document.body.classList.remove('mk-explore');
+  MK.rect = Object.assign({}, MK.tgt);
+  mkRebuild(); mkApplyRect(); mkEl('mkPanel').hidden = true;
+  if (!MK.hinted) { MK.hinted = true; setTimeout(() => mkToast('● drops a point 3 steps ahead of Tuto'), 900); }
+}
+function stopMaker() {
+  mkAutosave(); mkEl('mkPanel').hidden = true;
+  if (MK.saved) { camDist = MK.saved.camDist; DIST_MIN = MK.saved.DIST_MIN; DIST_MAX = MK.saved.DIST_MAX; }
+}
+function mkUpdate(dt) {
+  MK.t += dt; const t = MK.t, B = MK, P = MK.pos;
+  const G = 45, JV = 17, FV = 22, SP = 9;
+  let kx = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+  let ky = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+  let ix = touchVec.x, iy = touchVec.y;
+  if (kx || ky) { const l = Math.hypot(kx, ky); ix = kx / l; iy = ky / l; }
+  const mag = Math.min(1, Math.hypot(ix, iy));
+  knob.setAttribute('transform', `translate(${100 + ix * KNOB_MAX} ${132 - iy * KNOB_MAX})`);
+  // camera orbit / pitch
+  B.yaw -= orbitDelta * 0.006 + ((keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0)) * 2.2 * dt;
+  B.pitch = THREE.MathUtils.clamp(B.pitch + pitchDelta * 0.005, 0.1, 1.45); orbitDelta = pitchDelta = 0;
+  // walk
+  const s = Math.sin(B.yaw), c = Math.cos(B.yaw);
+  const mx = c * ix + (-s) * iy, mz = (-s) * ix + (-c) * iy;
+  if (mag > 0.05) {
+    P.x += mx * SP * dt * (mag > 0.1 ? 1 : 0); P.z += mz * SP * dt * (mag > 0.1 ? 1 : 0);
+    if (mag > 0.1) B.face += wrapPi(Math.atan2(mx, mz) - B.face) * Math.min(1, 14 * dt);
+  }
+  const r = B.rect; P.x = THREE.MathUtils.clamp(P.x, r.x0 + 0.8, r.x1 - 0.8); P.z = THREE.MathUtils.clamp(P.z, r.z0 + 0.8, r.z1 - 0.8);
+  // jump, flip, fall, land on built planes
+  const ground = mkSurfaceBelow(P.x, P.y + 0.6, P.z);
+  if (input.jump) {
+    input.jump = false;
+    if (B.grounded) { B.vy = JV; B.grounded = false; B.usedFlip = false; B.airT = 0; }
+    else if (!B.usedFlip) { B.vy = FV; B.usedFlip = true; B.flipT = 0; }
+  }
+  if (B.grounded) { if (ground < P.y - 0.12) { B.grounded = false; B.vy = 0; B.airT = 0; } else P.y = ground; }
+  if (!B.grounded) {
+    B.vy -= G * dt; P.y += B.vy * dt; B.airT += dt; if (B.flipT >= 0) B.flipT += dt;
+    if (B.vy <= 0 && P.y <= ground) { P.y = ground; B.grounded = true; B.vy = 0; B.flipT = -1; B.usedFlip = false; }
+  }
+  // Tuto
+  const H = B.hero; H.root.position.copy(P); H.root.rotation.y = B.face;
+  const lx = mx * Math.cos(B.face) - mz * Math.sin(B.face), lz = mx * Math.sin(B.face) + mz * Math.cos(B.face);
+  poseCharacter(H, { mag: mag > 0.1 ? mag : 0, zr: 0, grounded: B.grounded, sit: 0, dance: -1, flipT: B.flipT, airT: B.airT, glide: 0, hold: 0, ride: 0,
+    sx: lx * mag, sz: lz * mag, held: false, gliding: false, t, tms: t * 1000 }, dt);
+  B.shadow.position.set(P.x, ground + 0.04, P.z);
+  const ss = 1 / (1 + Math.max(0, P.y - ground) * 0.15); B.shadow.scale.setScalar(ss); B.shadow.material.opacity = 0.2 * ss;
+  // the stage grows
+  const k = 1 - Math.exp(-3 * dt), T = B.tgt;
+  let moved = false;
+  for (const key of ['x0', 'x1', 'z0', 'z1']) { const d = T[key] - r[key]; if (Math.abs(d) > 0.01) { r[key] += d * k; moved = true; } else r[key] = T[key]; }
+  if (moved) mkApplyRect();
+  // the pink dot
+  const cu = mkCursor(), build = !B.explore;
+  B.gU.visible = build;
+  if (build) {
+    const gy = mkSurfaceBelow(cu.x, cu.y + 0.02, cu.z), L = cu.y - gy;
+    B.ghost.position.copy(cu); B.ghost.scale.setScalar(1 + 0.12 * Math.sin(t * 6));
+    B.ring.position.set(cu.x, gy + 0.04, cu.z);
+    B.drop.visible = Math.abs(L) > 0.08; B.drop.scale.y = Math.max(0.001, Math.abs(L)); B.drop.position.set(cu.x, (cu.y + gy) / 2, cu.z);
+    const np = mkNearest(cu, 1.6);
+    B.snapMark.visible = !!np; if (np) B.snapMark.position.set(...np.p);
+    const last = B.chain.length ? mkById(B.chain[B.chain.length - 1]) : null;
+    B.rubber.visible = !!last; if (last) placeEdge(B.rubber, last.p, np ? np.p : [cu.x, cu.y, cu.z], 0.045);
+  }
+  // camera
+  B.camT.lerp(tmpV.set(P.x, P.y + 2.2, P.z), 1 - Math.exp(-9 * dt));
+  const cp = Math.cos(B.pitch) * camDist;
+  B.cam.position.set(B.camT.x + Math.sin(B.yaw) * cp, B.camT.y + Math.sin(B.pitch) * camDist, B.camT.z + Math.cos(B.yaw) * cp);
+  B.cam.lookAt(B.camT);
+}
+
+// --- Maker buttons
+const mkBtn = (id, fn) => { const b = mkEl(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(e); }); };
+mkBtn('mkPoint', mkPlacePoint); mkBtn('mkLine', mkLine); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
+mkBtn('mkUp', () => { MK.ch = Math.min(40, MK.ch + 1); mkRebuild(); });
+mkBtn('mkDn', () => { MK.ch = Math.max(-8, MK.ch - 1); mkRebuild(); });
+mkBtn('mkMenu', () => { mkEl('mkPanel').hidden = false; });
+mkEl('mkPanel').addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === mkEl('mkPanel')) mkEl('mkPanel').hidden = true; });
+mkEl('mkClose').addEventListener('click', () => { mkEl('mkPanel').hidden = true; });
+const mkSw = mkEl('mkSw');
+MKC.forEach((col, i) => { const s = document.createElement('i'); s.style.background = hexCss(col); s.addEventListener('click', () => { MK.color = i; [...mkSw.children].forEach((x, j) => x.classList.toggle('on', j === i)); }); mkSw.appendChild(s); });
+mkSw.children[MK.color].classList.add('on');
+function mkSetExplore(on) {
+  MK.explore = on; document.body.classList.toggle('mk-explore', on); MK.chain = []; mkEl('mkPanel').hidden = true; mkRebuild();
+  if (on) mkToast('Explore! Walk and jump on your build');
+}
+mkEl('mkExplore').addEventListener('click', () => mkSetExplore(true));
+mkBtn('mkBuild', () => mkSetExplore(false));
+mkEl('mkSaveB').addEventListener('click', () => mkToast(mkAutosave() ? 'Saved on this device' : 'Saving is blocked here, use .json'));
+mkEl('mkLoadB').addEventListener('click', () => { let s = null; try { s = localStorage.getItem(MKSAVE); } catch (e) { } mkToast(s && mkLoadText(s) ? 'Loaded your save' : 'No save found'); mkEl('mkPanel').hidden = true; });
+mkEl('mkGltf').addEventListener('click', () => mkDownload('tuto-level.gltf', mkGLTF(), 'model/gltf+json'));
+mkEl('mkObj').addEventListener('click', () => mkDownload('tuto-level.obj', mkPolys().length ? mkOBJ() : null, 'text/plain'));
+mkEl('mkJson').addEventListener('click', () => mkDownload('tuto-level.json', JSON.stringify(MK.data), 'application/json'));
+mkEl('mkCopy').addEventListener('click', mkCopy);
+mkEl('mkImport').addEventListener('click', () => mkEl('mkFile').click());
+mkEl('mkFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+  rd.onload = () => { mkPush(); mkToast(mkLoadText(String(rd.result)) ? 'Level opened' : 'That file is not a Tuto level'); mkEl('mkPanel').hidden = true; };
+  rd.readAsText(f); e.target.value = '';
+});
+let mkNewArm = 0;
+mkEl('mkNew').addEventListener('click', () => {
+  if (!mkNewArm) { mkNewArm = 1; mkEl('mkNew').textContent = 'Tap again to erase everything'; setTimeout(() => { mkNewArm = 0; mkEl('mkNew').textContent = 'Start a new level'; }, 2500); return; }
+  mkNewArm = 0; mkEl('mkNew').textContent = 'Start a new level'; mkPush(); MK.data = mkEmpty(); MK.chain = []; mkCommit(); mkEl('mkPanel').hidden = true; mkToast('Fresh white void');
+});
+
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  update(dt);
-  effect.render(scene, camera);
+  if (modeKind === 'planet') { update(dt); effect.render(scene, camera); }
+  else if (modeKind === 'maker') { mkUpdate(dt); effect.render(MK.scene, MK.cam); }
   requestAnimationFrame(frame);
 }
 update(0);
@@ -1749,9 +2377,10 @@ requestAnimationFrame(frame);
 
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  if (MK.cam) { MK.cam.aspect = innerWidth / innerHeight; MK.cam.updateProjectionMatrix(); }
   renderer.setSize(innerWidth, innerHeight);
 });
-window.__debug = { input, touchVec, keys, get hero() { return hero; }, get mode() { return mode; } };
+window.__debug = { MK, openMenu, switchTo, chooseDisc, leaveMode, get menu() { return menu; }, get modeKind() { return modeKind; }, mkPlacePoint, mkLine, mkFill, mkDelete, input, touchVec, keys, get hero() { return hero; }, get mode() { return mode; } };
 </script>
 </body>
 </html>
