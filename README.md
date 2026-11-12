@@ -88,3 +88,7 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 - Height slider (left, above the stick) sets how high new points go. **●** is a round button left of Jump (tap = place, hold = shoot, with a fadeaway lean and a kicked-out leg). Menu is the ☰ at the top right; the triangle at the top left goes back to the planet. Counts show at the top of the screen.
 - Hold a plane: R / S / T / E pop up. Slide onto one and let go to get its controls: **Rotate** (axis + angle), **Scale** (all or one axis), **Transform** (X/Y/Z move), **Extrude** (pulls the plane out along its normal and adds the side walls). ✓ applies (Undo reverts), ✕ cancels.
 - Solid planes now also push Tuto back out if one ends up inside him, and block him at corners and from below.
+
+### Tuto Maker: rival Tuto
+- **Foe** (😠) spawns a purple rival (up to 3; a 4th tap sends them home). It chases Tuto and lunges to grab him: caught Tuto is held in front of it. Tap **Jump** 3 times to break free (it gets stunned), or wait and it throws him.
+- If a plane is in its way, the rival punches and kicks it. Each hit tints the plane redder; the 3rd hit shatters it into pieces (Undo brings it back).

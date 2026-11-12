@@ -248,6 +248,7 @@
     <button class="mkb" id="mkFill" aria-label="Fill the lines into a solid plane"><b>▰</b><small>Plane</small></button>
     <button class="mkb" id="mkSolid" aria-label="Make the planes solid so Tuto cannot walk through them"><b>▣</b><small>Solid</small></button>
     <button class="mkb" id="mkAxis" aria-label="Which way dragging moves things"><b>⇄</b><small>Floor</small></button>
+    <button class="mkb" id="mkFoe" aria-label="Spawn a rival Tuto"><b>😠</b><small>Foe</small></button>
     <button class="mkb" id="mkUndo" aria-label="Undo"><b>↶</b><small>Undo</small></button>
     <button class="mkb" id="mkDel" aria-label="Delete the thing by the pink dot"><b>✕</b><small>Delete</small></button>
   </div>
@@ -1227,6 +1228,21 @@ function poseCharacter(ch, s, dt) {
     P.shL.rotation.x = L(P.shL.rotation.x, L(-1.25, -0.05, hg), k); P.shR.rotation.x = L(P.shR.rotation.x, L(-1.25, -0.05, hg), k);
     P.shL.rotation.z = L(P.shL.rotation.z, L(-0.3, -2.85, hg), k); P.shR.rotation.z = L(P.shR.rotation.z, L(0.3, 2.85, hg), k);
     body.position.y = L(body.position.y, -0.55 * sq, k); body.rotation.x = L(body.rotation.x, 0.3 * sq, k); body.rotation.z = L(body.rotation.z, 0.06 * Math.sin(t2 * 1.7) * hg, k);
+  }
+  if (s.atkK) {                   // a rival's moves: punch, kick, and the two-handed grab
+    const k = s.atkK, tt = Math.min(1, Math.max(0, s.atkT)), L = (x, y, w) => x + (y - x) * w;
+    const kf = (frames) => { for (let i = 1; i < frames.length; i++) if (tt <= frames[i][0]) { const [t0, a] = frames[i - 1], [t1, b] = frames[i]; const u = (tt - t0) / (t1 - t0 || 1); return a + (b - a) * u * u * (3 - 2 * u); } return frames[frames.length - 1][1]; };
+    if (k === 'p') {
+      P.shL.rotation.x = kf([[0, -0.2], [0.3, 0.8], [0.5, -1.57], [0.78, -1.4], [1, -0.2]]); P.shL.rotation.z = -0.15; P.elL.rotation.x = kf([[0, -0.2], [0.3, -1.1], [0.5, -0.05], [1, -0.2]]);
+      P.shR.rotation.x = -1.0; P.shR.rotation.z = 0.3; P.elR.rotation.x = -1.3; body.rotation.x = kf([[0, 0], [0.5, 0.25], [1, 0]]); P.hipL.rotation.x = 0.35; P.hipR.rotation.x = -0.35;
+    } else if (k === 'k') {
+      P.hipR.rotation.x = kf([[0, 0], [0.3, 0.7], [0.5, -1.65], [0.78, -1.5], [1, 0]]); P.hipL.rotation.x = 0.1; body.rotation.x = kf([[0, 0], [0.3, 0.1], [0.5, -0.3], [1, 0]]);
+      P.shL.rotation.z = -0.7; P.shR.rotation.z = 0.7; P.shL.rotation.x = -0.3; P.shR.rotation.x = -0.3;
+    } else if (k === 'g') {
+      const w = Math.min(1, tt * 2.2); P.shL.rotation.x = L(P.shL.rotation.x, -1.5, w); P.shR.rotation.x = L(P.shR.rotation.x, -1.5, w);
+      P.shL.rotation.z = L(P.shL.rotation.z, -0.2, w); P.shR.rotation.z = L(P.shR.rotation.z, 0.2, w); P.elL.rotation.x = L(P.elL.rotation.x, -0.2, w); P.elR.rotation.x = L(P.elR.rotation.x, -0.2, w);
+      body.rotation.x = L(body.rotation.x, 0.25, w);
+    }
   }
   if (s.shAmt > 0.01) {           // the jump-shot form: coil, set the ball high in an L, extend, flick, hold the follow-through
     const a = s.shAmt, ld = s.shLoad, ex = s.shExt, L = (x, y, w) => x + (y - x) * w, ss = Math.min(1, Math.max(0, ex));
@@ -2215,7 +2231,8 @@ function placeEdge(m, a, b, w) {
 function mkClearGroup(g) { while (g.children.length) { const c = g.children[0]; g.remove(c); if (c.geometry && c.geometry !== edgeGeo && !c.userData.shared) c.geometry.dispose(); } }
 const mkSelFill = new THREE.MeshBasicMaterial({ color: 0x2BD9FF, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }); noOl(mkSelFill);
 const mkSelEdge = new THREE.MeshBasicMaterial({ color: 0x2BD9FF, depthTest: false }); noOl(mkSelEdge);
-MK.selPlane = null;
+MK.selPlane = null; MK.planeHits = new WeakMap();
+const mkHitMat = [null, 1, 2].map(n => n ? noOl(new THREE.MeshBasicMaterial({ color: 0xFF3B30, transparent: true, opacity: 0.16 * n + 0.04, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 })) : null);
 function mkPolys() {
   return MK.data.planes.map((pl, i) => {
     const pts = pl.ids.map(mkById).filter(Boolean).map(p => p.p);
@@ -2232,6 +2249,7 @@ function mkRebuild() {
     for (const t of o.tris) for (const i of t) { pos[k++] = o.pts[i][0]; pos[k++] = o.pts[i][1]; pos[k++] = o.pts[i][2]; }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals();
     const m = new THREE.Mesh(g, mkPlaneMat(o.c)); m.userData.pi = o.i; MK.gF.add(m); MK.solids.push(m);
+    const hh = MK.planeHits.get(MK.data.planes[o.i]); if (hh) { const cm = new THREE.Mesh(g.clone(), mkHitMat[Math.min(2, hh)]); cm.renderOrder = 2; MK.gE.add(cm); }
     if (MK.selPlane === o.i) {   // the selected plane glows cyan
       const hg = g.clone(), hm = new THREE.Mesh(hg, mkSelFill); hm.renderOrder = 3; MK.gE.add(hm);
       for (let k = 0; k < o.pts.length; k++) { const e = new THREE.Mesh(edgeGeo, mkSelEdge); e.userData.shared = true; placeEdge(e, o.pts[k], o.pts[(k + 1) % o.pts.length], 0.12); e.renderOrder = 4; MK.gE.add(e); }
@@ -2436,7 +2454,7 @@ function startMaker() {
   MK.saved = { camDist, DIST_MIN, DIST_MAX };
   camDist = 18; DIST_MIN = 7; DIST_MAX = 90;
   MK.pos.set(0, 0, 0); MK.face = 0; MK.yaw = Math.PI; MK.pitch = 0.5; MK.vy = 0; MK.grounded = true; MK.flipT = -1; MK.ch = 0; MK.chain = [];
-  MK.selPlane = null; MK.radial = null; MK.tool = null; mkEl('mkTool').hidden = true; mkEl('mkRad').style.display = 'none';
+  mkClearFoes(); MK.selPlane = null; MK.radial = null; MK.tool = null; mkEl('mkTool').hidden = true; mkEl('mkRad').style.display = 'none';
   MK.ball = null; MK.shot = null; MK.charging = false; MK.pbDown = 0; MK.shAmt = MK.shLoad = MK.shExt = 0; if (MK.ballMesh) MK.ballMesh.visible = false;
   MK.gr = null; mkEl('mkGrab').classList.remove('on'); MK.glideAmt = 0; MK.gliding = false;
   MK.camT.set(0, 2.2, 0); MK.fpLock = false; MK.sel = null; mkSetFP(false); mkEl('mkLook').classList.remove('on'); MK.explore = false; document.body.classList.remove('mk-explore');
@@ -2474,7 +2492,7 @@ function mkGrabCandidate() {
   return best;
 }
 function mkGrabStart() {
-  if (MK.explore) return;
+  if (MK.explore || MK.held) return;
   const c = mkGrabCandidate(); if (!c) return mkToast('Nothing in reach to grab');
   if (MK.fp) { MK.fpLock = false; mkEl('mkLook').classList.remove('on'); mkSetFP(false); }
   MK.chain = []; mkPush();
@@ -2512,25 +2530,25 @@ function mkGrabStep(dt, ix, iy, mx, mz) {
 }
 // solid planes: slide along walls, bump heads, and get pushed back out if one ever ends up inside him
 const mkSolidRay = new THREE.Raycaster(), mkSolidHs = [0.7, 1.3, 2.0, 2.7, 3.4];
-function mkWallHit(ox, oy, oz, dir, far) {   // nearest plane that counts as a wall for Tuto standing at P.y
+function mkWallHit(ox, oy, oz, dir, far, ref = MK.pos) {   // nearest plane that counts as a wall for Tuto standing at P.y
   mkSolidRay.ray.origin.set(ox, oy, oz); mkSolidRay.ray.direction.copy(dir); mkSolidRay.near = 0; mkSolidRay.far = far;
   const hs = mkSolidRay.intersectObjects(MK.solids, false);
   for (const x of hs) {
-    if (!x.face) continue; const n = x.face.normal, hn = Math.hypot(n.x, n.z), rise = x.point.y - MK.pos.y;
+    if (!x.face) continue; const n = x.face.normal, hn = Math.hypot(n.x, n.z), rise = x.point.y - ref.y;
     if (hn < 0.2 || rise <= 0.65) continue;                 // floors, and steps he can just walk up
     if (Math.abs(n.y) > 0.5 && rise < 1.6) continue;        // a gentle ramp he can climb
     return x;
   }
   return null;
 }
-function mkSolidSlide(dx, dz) {
+function mkSolidSlide(dx, dz, P = MK.pos) {
   if (!MK.solids.length) return [dx, dz];
-  const P = MK.pos; let len = Math.hypot(dx, dz); if (len < 1e-6) return [dx, dz];
+  let len = Math.hypot(dx, dz); if (len < 1e-6) return [dx, dz];
   const dir = new THREE.Vector3(dx / len, 0, dz / len);
   for (let pass = 0; pass < 3; pass++) {
     let hit = null; const px = -dir.z, pz = dir.x;
     for (const h of mkSolidHs) for (const lat of [0, -0.55, 0.55]) {
-      const x = mkWallHit(P.x + px * lat, P.y + h, P.z + pz * lat, dir, TUTO_R + len); if (x && (!hit || x.distance < hit.distance)) hit = x;
+      const x = mkWallHit(P.x + px * lat, P.y + h, P.z + pz * lat, dir, TUTO_R + len, P); if (x && (!hit || x.distance < hit.distance)) hit = x;
     }
     if (!hit) break;
     const n = new THREE.Vector3(hit.face.normal.x, 0, hit.face.normal.z).normalize(); if (n.dot(dir) > 0) n.negate();
@@ -2599,7 +2617,7 @@ function mkShotStep(dt, rawMag) {
   }
   if (B.ball && input.jump) mkBallFreeze();
   // winding up
-  if (B.pbDown && !B.charging && !B.shot && !B.gr && performance.now() - B.pbDown > 220) { B.charging = true; B.chargeT = 0.22; }
+  if (B.pbDown && !B.charging && !B.shot && !B.gr && !B.held && performance.now() - B.pbDown > 220) { B.charging = true; B.chargeT = 0.22; }
   if (B.charging) B.chargeT += dt;
   const preview = B.charging && !B.explore;
   // timeline of the shot
@@ -2643,6 +2661,101 @@ function mkShotStep(dt, rawMag) {
     let seen = false; B.dots.forEach(d => { if (seen) d.visible = false; if (d.position.y <= 0.001) seen = true; });
   } else B.dots.forEach(d => { d.visible = false; });
 }
+// ---- a rival Tuto (another colour): chases the player to grab him, and smashes planes in the way. Three hits shatters a plane.
+Object.assign(MK, { foes: [], held: null, kbx: 0, kbz: 0, shards: [] });
+const FOE_PAL = { head: 0x6B4DE0, torso: 0xA896F4, red: 0x1FBFA6 };
+const mkShardGeo = new THREE.TetrahedronGeometry(0.3);
+function mkClearFoes() {
+  MK.foes.forEach(f => { MK.scene.remove(f.hero.root, f.shadow); }); MK.foes = []; MK.held = null; MK.kbx = MK.kbz = 0;
+  MK.shards.forEach(sh => MK.scene.remove(sh.m)); MK.shards = [];
+}
+function mkFoeSpawn() {
+  if (MK.foes.length >= 3) { mkClearFoes(); return mkToast('Rivals sent home'); }
+  const a = Math.random() * Math.PI * 2, P = MK.pos, r = MK.rect;
+  const x = THREE.MathUtils.clamp(P.x + Math.sin(a) * 9, r.x0 + 1, r.x1 - 1), z = THREE.MathUtils.clamp(P.z + Math.cos(a) * 9, r.z0 + 1, r.z1 - 1);
+  const hero = buildCharacter(FOE_PAL); hero.anim = newAnim(); hero.root.scale.setScalar(MK_SCALE); MK.scene.add(hero.root);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.42 * MK_SCALE, 24).rotateX(-Math.PI / 2), noOl(new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0.2, depthWrite: false }))); MK.scene.add(shadow);
+  const f = { hero, shadow, pos: new THREE.Vector3(x, mkSurfaceBelow(x, 60, z), z), face: 0, vy: 0, grounded: true, airT: 0, state: 'chase', st: 0, cd: 1.2, stun: 0, tgt: null, hitDone: false, atkK: null, atkT: 0, moving: 0 };
+  MK.foes.push(f); mkToast('A rival Tuto appears!');
+}
+function mkFoeAhead(f) {   // a plane right in front of the rival's fists or feet
+  const rc = new THREE.Raycaster(); rc.far = 2.4;
+  for (const h of [0.6, 1.5]) { rc.ray.origin.set(f.pos.x, f.pos.y + h, f.pos.z); rc.ray.direction.set(Math.sin(f.face), 0, Math.cos(f.face)); const hs = rc.intersectObjects(MK.solids, false); if (hs.length) return { pi: hs[0].object.userData.pi, point: hs[0].point }; }
+  return null;
+}
+function mkSpray(pt, n, col, spd) {
+  if (!MK.gS) { MK.gS = new THREE.Group(); MK.scene.add(MK.gS); }
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(mkShardGeo, mkPlaneMat(col)); m.position.copy(pt); m.scale.setScalar(0.5 + Math.random() * 0.9); MK.gS.add(m);
+    MK.shards.push({ m, v: new THREE.Vector3((Math.random() - 0.5) * spd, 4 + Math.random() * spd * 0.7, (Math.random() - 0.5) * spd), life: 1.1 + Math.random() * 0.6, spin: new THREE.Vector3(Math.random() * 9, Math.random() * 9, Math.random() * 9) });
+  }
+}
+function mkPlaneHit(pi, pt) {
+  const D = MK.data, pl = D.planes[pi]; if (!pl) return;
+  const n = (MK.planeHits.get(pl) || 0) + 1; MK.planeHits.set(pl, n);
+  if (n < 3) { mkSpray(pt, 5, pl.c, 6); mkRebuild(); mkToast(n === 1 ? 'Crack!' : 'Almost gone!'); return; }
+  const polys = mkPolys().find(o => o.i === pi);
+  if (polys) { for (let i = 0; i < 26; i++) { const t = polys.tris[Math.floor(Math.random() * polys.tris.length)], a = polys.pts[t[0]], b = polys.pts[t[1]], c = polys.pts[t[2]]; let u = Math.random(), v = Math.random(); if (u + v > 1) { u = 1 - u; v = 1 - v; } mkSpray(new THREE.Vector3(a[0] + (b[0] - a[0]) * u + (c[0] - a[0]) * v, a[1] + (b[1] - a[1]) * u + (c[1] - a[1]) * v, a[2] + (b[2] - a[2]) * u + (c[2] - a[2]) * v), 1, pl.c, 9); } }
+  if (MK.tool) mkToolClose(false);
+  mkPush(); D.planes.splice(pi, 1); if (MK.selPlane === pi) MK.selPlane = null; else if (MK.selPlane > pi) MK.selPlane--; mkCommit(); mkToast('SHATTERED!');
+}
+function mkHeldStep(dt) {
+  const H = MK.held, f = H.foe, B = MK, P = B.pos; if (!f || !B.foes.includes(f)) { B.held = null; return; }
+  H.t += dt; if (input.jump) { input.jump = false; H.breaks++; try { navigator.vibrate && navigator.vibrate(12); } catch (_) { } }
+  const fx = Math.sin(f.face), fz = Math.cos(f.face);
+  P.x += (f.pos.x + fx * 1.3 - P.x) * Math.min(1, 16 * dt); P.z += (f.pos.z + fz * 1.3 - P.z) * Math.min(1, 16 * dt); P.y += (f.pos.y + 0.7 - P.y) * Math.min(1, 16 * dt);
+  B.face += wrapPi(f.face + Math.PI - B.face) * Math.min(1, 12 * dt); B.vy = 0; B.grounded = false; B.flipT = -1;
+  if (H.breaks >= 3) { B.held = null; B.kbx = fx * 9; B.kbz = fz * 9; B.vy = 12; B.usedFlip = false; f.state = 'stun'; f.stun = 1.4; f.cd = 2.5; mkToast('Broke free!'); }
+  else if (H.t > 3.2) { B.held = null; B.kbx = fx * 17; B.kbz = fz * 17; B.vy = 15; B.usedFlip = false; f.state = 'chase'; f.cd = 3; mkToast('Thrown!'); }
+}
+function mkFoeStep(f, dt) {
+  const B = MK, P = B.pos, G = 45, SPD = 5.6; f.cd -= dt; f.stun -= dt; f.moving = 0; f.atkK = null;
+  const dx = P.x - f.pos.x, dz = P.z - f.pos.z, d = Math.hypot(dx, dz), dy = P.y - f.pos.y, toP = Math.atan2(dx, dz);
+  const turn = (a, k = 10) => { f.face += wrapPi(a - f.face) * Math.min(1, k * dt); };
+  const walk = sp => {
+    let mx = Math.sin(f.face) * sp * dt, mz = Math.cos(f.face) * sp * dt; if (B.solid) [mx, mz] = mkSolidSlide(mx, mz, f.pos);
+    f.pos.x += mx; f.pos.z += mz; f.moving = 1;
+  };
+  if (f.state === 'stun') { f.atkK = null; if (f.stun <= 0) f.state = 'chase'; }
+  else if (f.state === 'chase') {
+    turn(toP); const ah = mkFoeAhead(f);
+    if (ah && d > 3 && !B.held) { f.state = 'smash'; f.st = 0; f.hitDone = false; }
+    else if (d < 2.4 && Math.abs(dy) < 2.6 && f.cd <= 0 && !B.held) { f.state = 'grab'; f.st = 0; f.hitDone = false; }
+    else { if (d > 1.5) walk(SPD); if (f.grounded && dy > 1.6 && d < 7) { f.vy = 17; f.grounded = false; f.airT = 0; } }
+  } else if (f.state === 'grab') {
+    f.st += dt; turn(toP, 14); f.atkK = 'g'; f.atkT = f.st / 0.55; if (f.st < 0.3) walk(3);
+    if (f.st >= 0.3 && !f.hitDone) {
+      f.hitDone = true;
+      if (d < 2.8 && Math.abs(dy) < 2.8 && !B.held) { if (B.gr) mkGrabEnd(false); B.held = { foe: f, t: 0, breaks: 0 }; f.state = 'hold'; f.st = 0; mkToast('Caught! Tap Jump to break free'); }
+    }
+    if (f.st >= 0.6 && f.state === 'grab') { f.state = 'chase'; f.cd = 1.5; }
+  } else if (f.state === 'hold') {
+    f.st += dt; f.atkK = 'g'; f.atkT = 1; turn(toP, 6); if (!B.held) f.state = 'stun';
+  } else if (f.state === 'smash') {
+    f.st += dt; const cyc = 0.62, k = Math.floor(f.st / cyc) % 2 ? 'k' : 'p', tt = (f.st % cyc) / cyc; f.atkK = k; f.atkT = tt;
+    if (tt < 0.1) f.hitDone = false;
+    if (tt >= 0.5 && !f.hitDone) { f.hitDone = true; const ah = mkFoeAhead(f); if (ah) mkPlaneHit(ah.pi, ah.point); else { f.state = 'chase'; } }
+    if (d < 2.4 && f.cd <= 0 && !B.held) f.state = 'chase';
+    if (f.state === 'smash' && f.st > 0.3 && !mkFoeAhead(f)) f.state = 'chase';
+  }
+  // body: gravity, ground, bounds
+  const ground = mkSurfaceBelow(f.pos.x, f.pos.y + 0.6, f.pos.z);
+  if (f.grounded) { if (ground < f.pos.y - 0.12) { f.grounded = false; f.vy = 0; f.airT = 0; } else f.pos.y = ground; }
+  if (!f.grounded) { f.vy -= G * dt; f.pos.y += f.vy * dt; f.airT += dt; if (f.vy <= 0 && f.pos.y <= ground) { f.pos.y = ground; f.grounded = true; f.vy = 0; } }
+  const r = B.rect; f.pos.x = THREE.MathUtils.clamp(f.pos.x, r.x0 + 0.8, r.x1 - 0.8); f.pos.z = THREE.MathUtils.clamp(f.pos.z, r.z0 + 0.8, r.z1 - 0.8);
+  f.hero.root.position.copy(f.pos); f.hero.root.rotation.y = f.face;
+  poseCharacter(f.hero, { mag: f.moving, zr: 0, grounded: f.grounded, sit: 0, dance: -1, flipT: -1, airT: f.airT, glide: 0, hold: 0, ride: 0, sx: 0, sz: f.moving, held: false, gliding: false, atkK: f.atkK, atkT: f.atkT, t: B.t, tms: B.t * 1000 }, dt);
+  f.shadow.position.set(f.pos.x, ground + 0.04, f.pos.z); const ss = 1 / (1 + Math.max(0, f.pos.y - ground) * 0.15); f.shadow.scale.setScalar(ss);
+}
+function mkFoesUpdate(dt) {
+  for (const f of MK.foes) mkFoeStep(f, dt);
+  for (let i = MK.shards.length - 1; i >= 0; i--) {
+    const sh = MK.shards[i]; sh.life -= dt; sh.v.y -= 26 * dt; sh.m.position.addScaledVector(sh.v, dt);
+    if (sh.m.position.y < 0.15) { sh.m.position.y = 0.15; sh.v.y *= -0.35; sh.v.x *= 0.7; sh.v.z *= 0.7; }
+    sh.m.rotation.x += sh.spin.x * dt; sh.m.rotation.y += sh.spin.y * dt; if (sh.life < 0.4) sh.m.scale.multiplyScalar(Math.max(0, 1 - 3 * dt));
+    if (sh.life <= 0) { MK.gS.remove(sh.m); MK.shards.splice(i, 1); }
+  }
+}
 function mkUpdate(dt) {
   MK.t += dt; const t = MK.t, B = MK, P = MK.pos;
   const G = 45, JV = 17, FV = 22, SP = 9;
@@ -2651,6 +2764,7 @@ function mkUpdate(dt) {
   let ix = touchVec.x, iy = touchVec.y;
   if (kx || ky) { const l = Math.hypot(kx, ky); ix = kx / l; iy = ky / l; }
   mkShotStep(dt, Math.hypot(ix, iy));
+  mkFoesUpdate(dt);
   if (B.fp) {   // the stick (and dragging the screen) turn Tuto's head instead of walking
     B.face -= ix * 2.0 * dt + orbitDelta * 0.005; B.look = THREE.MathUtils.clamp(B.look + iy * 1.5 * dt - pitchDelta * 0.004, -1.35, 1.35);
     ix = iy = 0; orbitDelta = pitchDelta = 0;
@@ -2663,7 +2777,12 @@ function mkUpdate(dt) {
   // walk
   const s = Math.sin(B.yaw), c = Math.cos(B.yaw);
   const mx = c * ix + (-s) * iy, mz = (-s) * ix + (-c) * iy;
+  if (B.kbx || B.kbz) {   // shoved or thrown by a rival
+    let kx2 = B.kbx * dt, kz2 = B.kbz * dt; if (B.solid) [kx2, kz2] = mkSolidSlide(kx2, kz2); P.x += kx2; P.z += kz2;
+    const dk = Math.exp(-3.2 * dt); B.kbx *= dk; B.kbz *= dk; if (Math.hypot(B.kbx, B.kbz) < 0.2) B.kbx = B.kbz = 0;
+  }
   if (B.gr) mkGrabStep(dt, ix, iy, mx, mz);
+  else if (B.held) mkHeldStep(dt);
   else if (mag > 0.05) {
     let dx = mx * SP * dt * (mag > 0.1 ? 1 : 0) * (B.gliding ? 1.15 : 1), dz = mz * SP * dt * (mag > 0.1 ? 1 : 0) * (B.gliding ? 1.15 : 1);
     if (B.solid && (dx || dz)) [dx, dz] = mkSolidSlide(dx, dz);
@@ -2674,16 +2793,16 @@ function mkUpdate(dt) {
   const r = B.rect; P.x = THREE.MathUtils.clamp(P.x, r.x0 + 0.8, r.x1 - 0.8); P.z = THREE.MathUtils.clamp(P.z, r.z0 + 0.8, r.z1 - 0.8);
   // jump, flip, fall, land on built planes
   const ground = mkSurfaceBelow(P.x, P.y + 0.6, P.z);
-  if (B.gr) input.jump = false;      // (jumping off a grip is handled in mkGrabStep)
+  if (B.gr || B.held) input.jump = false;      // (jumping off a grip is handled in mkGrabStep; struggling free in mkHeldStep)
   if (input.jump) {
     input.jump = false;
     if (B.grounded) { B.vy = JV; B.grounded = false; B.usedFlip = false; B.airT = 0; }
     else if (!B.usedFlip) { B.vy = FV; B.usedFlip = true; B.flipT = 0; }
   }
-  B.gliding = !B.gr && !B.grounded && jumpHeld && B.vy < 0 && B.flipT < 0;
-  if (B.gr) { /* held: mkGrabStep places him */ }
+  B.gliding = !B.gr && !B.held && !B.grounded && jumpHeld && B.vy < 0 && B.flipT < 0;
+  if (B.gr || B.held) { /* held: mkGrabStep / mkHeldStep place him */ }
   else if (B.grounded) { if (ground < P.y - 0.12) { B.grounded = false; B.vy = 0; B.airT = 0; } else P.y = ground; }
-  if (!B.gr && !B.grounded) {
+  if (!B.gr && !B.held && !B.grounded) {
     if (B.gliding) B.vy = Math.max(B.vy - G * 0.12 * dt, -3.1); else B.vy -= G * dt;
     if (B.solid && B.vy > 0) { const head = mkHeadHit(P, B.vy * dt + 0.1); if (head !== null) { P.y = Math.min(P.y, head - HEADH); B.vy = 0; } }
     P.y += B.vy * dt; B.airT += dt; if (B.flipT >= 0) { B.flipT += dt; if (B.flipT >= FLIP_DUR) B.flipT = -1; }
@@ -2694,8 +2813,8 @@ function mkUpdate(dt) {
   const H = B.hero; H.root.position.copy(P); H.root.rotation.y = B.face;
   const lx = mx * Math.cos(B.face) - mz * Math.sin(B.face), lz = mx * Math.sin(B.face) + mz * Math.cos(B.face);
   const gr = B.gr;
-  poseCharacter(H, { mag: !gr && mag > 0.1 ? mag : 0, zr: 0, grounded: gr ? true : B.grounded, sit: 0, dance: -1, flipT: B.flipT, airT: B.airT, glide: B.glideAmt, hold: 0, ride: 0,
-    sx: lx * mag, sz: lz * mag, held: false, gliding: B.gliding, grab: gr ? 1 : 0, grabUp: gr ? gr.hg : 0, grabLow: gr ? gr.sq : 0, shAmt: B.flipT < 0 && !gr ? B.shAmt : 0, shLoad: B.shLoad, shExt: B.shExt, t, tms: t * 1000 }, dt);
+  poseCharacter(H, { mag: !gr && !B.held && mag > 0.1 ? mag : 0, zr: 0, grounded: gr ? true : B.grounded, sit: 0, dance: -1, flipT: B.flipT, airT: B.airT, glide: B.glideAmt, hold: 0, ride: 0,
+    sx: lx * mag, sz: lz * mag, held: !!B.held, gliding: B.gliding, grab: gr ? 1 : 0, grabUp: gr ? gr.hg : 0, grabLow: gr ? gr.sq : 0, shAmt: B.flipT < 0 && !gr ? B.shAmt : 0, shLoad: B.shLoad, shExt: B.shExt, t, tms: t * 1000 }, dt);
   if (B.shAmt > 0.01) mkReadHand();
   B.shadow.position.set(P.x, ground + 0.04, P.z);
   const ss = 1 / (1 + Math.max(0, P.y - ground) * 0.15); B.shadow.scale.setScalar(ss); B.shadow.material.opacity = 0.2 * ss;
@@ -2736,7 +2855,7 @@ function mkUpdate(dt) {
 
 // --- Maker buttons
 const mkBtn = (id, fn) => { const b = mkEl(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); mkBallFreeze(); fn(e); }); };
-mkBtn('mkLine', () => mkLine()); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
+mkBtn('mkLine', () => mkLine()); mkBtn('mkFoe', mkFoeSpawn); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
 {
   const tr = mkEl('mkSlTrack'); let on = false, MIN = -8, MAX = 30;
   const setFrom = y => { const r = tr.getBoundingClientRect(), f = 1 - Math.min(1, Math.max(0, (y - r.top) / r.height)), v = Math.round(MIN + f * (MAX - MIN)); if (v !== MK.ch) { MK.ch = v; mkRebuild(); } };
