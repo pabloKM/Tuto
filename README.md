@@ -74,3 +74,8 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 - Hold a point or a line for a moment, then drag to move it (snaps to the grid, planes follow). Undo reverts it.
 - The ⇄ button switches dragging between **Floor** (slide on the ground) and **Wall** (move up/down).
 - Messages now pop up at the top of the screen, and the menu panel slides up from the bottom.
+
+### Tuto Maker: grabbing, solid planes, moves
+- **Grab** (✋, or F): Tuto locks on to the nearest point or line in reach (a cyan ring shows which) and grabs it. Something at his feet makes him crouch; something overhead makes him hang by his hands. The stick drags it (Floor/Wall button picks the direction). Tap Grab again to let go, or **Jump** to leap off it.
+- **Solid** (▣): planes block Tuto from the sides and from below. Off = he can walk through them (he still lands on top).
+- Float (hold Jump while falling) and the double-jump flip work in Maker now too.
