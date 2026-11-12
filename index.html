@@ -2232,6 +2232,18 @@ function mkGLTF() {
 }
 async function mkDownload(name, text, mime) {
   if (text == null) return mkToast('Build a plane first');
+  // inside the Claude artifact viewer, files go through its downloads capability
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+    if (dl) {
+      const tryName = async n => { await dl.save({ filename: n, data: text }); mkToast('Saved ' + n); };
+      try { return await tryName(name); }
+      catch (e) {
+        if (e && e.code === 'rejected_extension') { try { return await tryName(name + (name.endsWith('.gltf') ? '.json' : '.txt')); } catch (e2) { if (e2 && e2.code === 'declined') return; } }
+        else if (e && e.code === 'declined') return;
+      }
+    }
+  } catch (e) { }
   try {
     const file = new File([text], name, { type: mime });
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return mkToast('Shared ' + name); }
