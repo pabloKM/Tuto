@@ -80,7 +80,6 @@
     background:#FFD23C; border:3px solid #161216; box-shadow:2px 3px 0 #161216; padding:0; }
   #eject b { font-size:22px; font-weight:normal; line-height:1; } #eject span { font-size:17px; }
   body.m-frame #eject { display:flex; left:0; top:46%; width:34px; height:58px; border-left:0; border-radius:0 16px 16px 0; opacity:.9; } body.m-frame #eject span { display:none; }
-  body.m-maker #eject { display:flex; left:12px; top:12px; height:40px; padding:0 12px; border-radius:14px; }
   body.m-maker #zap, body.m-maker #mp, body.m-maker #act, body.m-maker #roomChip, body.m-maker #hint, body.m-maker #tap { display:none !important; }
   /* ---------- Tuto Maker ---------- */
   #mk { position:fixed; inset:0; z-index:6; pointer-events:none; display:none; }
@@ -96,7 +95,7 @@
   #mkH { display:flex; gap:2px; } #mkH button { width:28px; height:34px; border:3px solid #161216; border-radius:10px; background:#fff; font:inherit; font-size:15px; padding:0; box-shadow:2px 3px 0 #161216; color:#161216; }
   #mkH button:active { background:#FFD23C; transform:translate(1px,2px); box-shadow:1px 1px 0 #161216; }
   #mkBuild { position:absolute; left:50%; top:14px; transform:translateX(-50%); font:inherit; font-size:20px; padding:4px 16px; background:#FFD23C; border:3px solid #161216; border-radius:14px; box-shadow:2px 3px 0 #161216; color:#161216; }
-  #mkToast { position:absolute; left:50%; top:calc(12px + env(safe-area-inset-top)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
+  #mkToast { position:absolute; left:50%; top:calc(40px + env(safe-area-inset-top)); transform:translateX(-50%); font-size:21px; color:#161216; background:#fff; border:3px solid #161216; border-radius:14px;
     padding:4px 16px; opacity:0; transition:opacity .25s; pointer-events:none !important; text-align:center; max-width:50vw; z-index:3; }
   body.mk-explore #mkToast { top:calc(64px + env(safe-area-inset-top)); max-width:80vw; }
   #mkCross { position:absolute; left:50%; top:50%; width:30px; height:30px; margin:-15px 0 0 -15px; display:none; pointer-events:none !important; }
@@ -110,6 +109,35 @@
   #mkGrab b { font-size:28px; font-weight:normal; } #mkGrab small { font-size:12px; margin-top:2px; }
   #mkGrab.ready { opacity:1; background:#9BE7FF; } #mkGrab.on { opacity:1; background:#2BD9FF; transform:translate(1px,2px); box-shadow:1px 1px 0 #161216; }
   body.mk-explore #mkGrab { display:none; }
+  #mkChip { left:50%; top:10px; transform:translateX(-50%); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:14px; font-weight:600; letter-spacing:.02em; background:none; border:0; border-radius:0; padding:0; text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff; }
+  #mkToast { top:calc(40px + env(safe-area-inset-top)); }
+  #mkMenu { position:absolute; right:12px; top:calc(10px + env(safe-area-inset-top)); width:46px; height:46px; border-radius:50%; }
+  #mkMenu b { font-size:22px; font-weight:normal; }
+  #mkPoint { position:absolute; right:128px; bottom:calc(34px + env(safe-area-inset-bottom)); width:76px; height:76px; border-radius:50%; border-width:4px; background:#FF8FB3; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  #mkPoint b { font-size:30px; font-weight:normal; line-height:1; } #mkPoint small { font-size:11px; margin-top:1px; white-space:nowrap; }
+  #mkPoint:active, #mkPoint.held { background:#FF3D7F; transform:translate(1px,2px); box-shadow:1px 1px 0 #161216; }
+  body.mk-explore #mkPoint, body.mk-explore #mkMenu, body.mk-explore #mkSlide { display:none; }
+  #mkSlide { position:absolute; left:34px; bottom:calc(205px + env(safe-area-inset-bottom)); width:56px; display:flex; flex-direction:column; align-items:center; gap:2px; user-select:none; }
+  #mkSlV { font-family:system-ui,sans-serif; font-weight:700; font-size:15px; color:#161216; text-shadow:0 0 4px #fff,0 0 4px #fff; }
+  #mkSlide small { font-family:system-ui,sans-serif; font-weight:600; font-size:11px; color:#161216; text-shadow:0 0 4px #fff,0 0 4px #fff; }
+  #mkSlTrack { position:relative; width:56px; height:160px; touch-action:none; }
+  #mkSlTrack .rail { position:absolute; left:50%; top:0; bottom:0; width:14px; transform:translateX(-50%); background:#fff; border:3px solid #161216; border-radius:9px; box-shadow:2px 3px 0 #161216; }
+  #mkSlTrack .zero { position:absolute; left:50%; width:30px; height:3px; margin-left:-15px; background:#161216; opacity:.5; }
+  #mkSlThumb { position:absolute; left:50%; width:36px; height:36px; margin:-18px 0 0 -18px; border-radius:50%; background:#FF8FB3; border:4px solid #161216; box-shadow:2px 3px 0 #161216; }
+  #mkRad { position:fixed; inset:0; z-index:20; pointer-events:none; display:none; }
+  #mkRad i { position:absolute; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%; background:#fff; border:4px solid #161216; box-shadow:2px 3px 0 #161216; display:flex; align-items:center; justify-content:center; font-style:normal; font-size:26px; color:#161216; transition:transform .08s; }
+  #mkRad i.hot { background:#2BD9FF; transform:scale(1.25); }
+  #mkTool { position:absolute; left:64px; right:70px; top:calc(44px + env(safe-area-inset-top)); background:#fff; border:3px solid #161216; border-radius:16px; box-shadow:2px 3px 0 #161216; padding:6px 10px 8px; font-family:system-ui,sans-serif; z-index:8; }
+  #mkTool[hidden] { display:none; }
+  #mkTool .mt-head { display:flex; justify-content:space-between; align-items:center; font-size:16px; } #mkTool .mt-head b { font-size:19px; }
+  #mkTool .mt-head button { width:38px; height:34px; margin-left:6px; border:3px solid #161216; border-radius:10px; background:#fff; font:inherit; font-size:17px; padding:0; }
+  #mtOk { background:#7ED6A8 !important; }
+  #mtBody .mt-row { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:14px; font-weight:600; } #mtBody .mt-row span { width:18px; } #mtBody .mt-row input { flex:1; min-width:0; accent-color:#FF3D7F; } #mtBody .mt-row em { width:46px; text-align:right; font-style:normal; font-variant-numeric:tabular-nums; }
+  #mtBody .mt-axes { display:flex; gap:6px; margin-top:4px; } #mtBody .mt-axes button { flex:1; height:30px; border:3px solid #161216; border-radius:9px; background:#fff; font:inherit; font-size:15px; font-weight:700; padding:0; } #mtBody .mt-axes button.on { background:#FFD23C; }
+  body.m-maker #music { display:none !important; }
+  body.m-maker #eject, body.m-mocap #eject { display:flex; left:0; top:0; width:80px; height:80px; padding:6px 0 0 9px; border:0; border-radius:0; box-shadow:none; align-items:flex-start; justify-content:flex-start;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Cpath d='M2 2H78L2 78Z' fill='%23FFD23C' stroke='%23161216' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat; clip-path:polygon(0 0,100% 0,0 100%); }
+  body.m-maker #eject span, body.m-mocap #eject span { display:none; } body.m-maker #eject b, body.m-mocap #eject b { font-size:24px; }
   @media (max-height:720px) { .mkb { height:44px; } #mkTools { gap:5px; top:60px; } .mkb small { margin-top:1px; } }
   body.mk-explore #mkTools, body.mk-explore #mkChip { display:none; } body:not(.mk-explore) #mkBuild { display:none; }
   #mkPanel { position:fixed; inset:0; z-index:40; background:rgba(22,18,22,.45); display:flex; align-items:flex-end; justify-content:center; padding-bottom:calc(14px + env(safe-area-inset-bottom)); }
@@ -123,7 +151,6 @@
   .mkgrid button.wide { grid-column:1 / 3; background:#FDBA1C; font-size:21px; }
   .mkgrid button:active { transform:translate(1px,1px); box-shadow:1px 1px 0 #161216; }
   /* ---------- Tuto Motion (mocap) ---------- */
-  body.m-mocap #eject { display:flex; left:12px; top:12px; height:40px; padding:0 12px; border-radius:14px; }
   body.m-mocap #joy, body.m-mocap #stickZone, body.m-mocap #jump, body.m-mocap #zap, body.m-mocap #mp, body.m-mocap #act, body.m-mocap #roomChip,
   body.m-mocap #hint, body.m-mocap #tap, body.m-mocap #music { display:none !important; }
   #mc { position:fixed; inset:0; z-index:6; pointer-events:none; display:none; }
@@ -216,17 +243,19 @@
 <div id="mk">
   <div id="mkChip"></div>
   <div id="mkTools">
-    <button class="mkb" id="mkLook" aria-label="First person: hold to aim with the stick, tap to lock"><b>👁</b><small>Look</small></button>
-    <button class="mkb" id="mkPoint" aria-label="Place a point 3 units in front of Tuto"><b>●</b><small id="mkPointL">Point</small></button>
-    <div id="mkH"><button id="mkUp" aria-label="Raise the point">▲</button><button id="mkDn" aria-label="Lower the point">▼</button></div>
+    <button class="mkb" id="mkLook" style="display:none" aria-hidden="true"><b>👁</b><small>Look</small></button>
     <button class="mkb" id="mkLine" aria-label="Draw a line between points"><b>╱</b><small>Line</small></button>
     <button class="mkb" id="mkFill" aria-label="Fill the lines into a solid plane"><b>▰</b><small>Plane</small></button>
     <button class="mkb" id="mkSolid" aria-label="Make the planes solid so Tuto cannot walk through them"><b>▣</b><small>Solid</small></button>
     <button class="mkb" id="mkAxis" aria-label="Which way dragging moves things"><b>⇄</b><small>Floor</small></button>
     <button class="mkb" id="mkUndo" aria-label="Undo"><b>↶</b><small>Undo</small></button>
     <button class="mkb" id="mkDel" aria-label="Delete the thing by the pink dot"><b>✕</b><small>Delete</small></button>
-    <button class="mkb" id="mkMenu" aria-label="Colours, save and export"><b>☰</b><small>More</small></button>
   </div>
+  <button class="mkb" id="mkMenu" aria-label="Menu: colours, save and export"><b>☰</b></button>
+  <button class="mkb" id="mkPoint" aria-label="Tap: place a point. Hold: shoot a point"><b>●</b><small id="mkPointL">Point</small></button>
+  <div id="mkSlide"><span id="mkSlV">0</span><div id="mkSlTrack"><i class="rail"></i><i class="zero"></i><i id="mkSlThumb"></i></div><small>Height</small></div>
+  <div id="mkRad"></div>
+  <div id="mkTool" hidden><div class="mt-head"><b id="mtName"></b><span><button id="mtNo" aria-label="Cancel">✕</button><button id="mtOk" aria-label="Apply">✓</button></span></div><div id="mtBody"></div></div>
   <button id="mkGrab" aria-label="Grab a point or line"><b>✋</b><small>Grab</small></button>
   <div id="mkCross"></div>
   <button id="mkBuild">🔨 Build</button>
@@ -766,7 +795,7 @@ cvs.addEventListener('pointerdown', e => {
 });
 cvs.addEventListener('pointermove', e => {
   const p = camPtrs.get(e.pointerId); if (!p) return;
-  if (camPtrs.size === 1 && !(typeof MK !== 'undefined' && MK.drag)) { orbitDelta += e.clientX - p.x; pitchDelta += e.clientY - p.y; }
+  if (camPtrs.size === 1 && !(typeof MK !== 'undefined' && (MK.drag || MK.radial))) { orbitDelta += e.clientX - p.x; pitchDelta += e.clientY - p.y; }
   p.x = e.clientX; p.y = e.clientY;
   if (camPtrs.size >= 2) {
     const d = pinchDist();
@@ -1206,9 +1235,9 @@ function poseCharacter(ch, s, dt) {
     P.elL.rotation.x = L(P.elL.rotation.x, L(-1.0, -0.12 - 0.3 * Math.sin(Math.min(1, ss) * Math.PI), ss), a);        // L-shape, then the wrist flick
     P.shR.rotation.x = L(P.shR.rotation.x, L(-1.5, -0.4, ss), a); P.shR.rotation.z = L(P.shR.rotation.z, L(-0.45, 0.35, ss), a);   // guide hand cups the ball, then falls away
     P.elR.rotation.x = L(P.elR.rotation.x, L(-1.0, -0.2, ss), a);
-    P.hipL.rotation.x = L(P.hipL.rotation.x, L(-0.5 * ld, 0.08, ss), a * 0.85); P.hipR.rotation.x = L(P.hipR.rotation.x, L(-0.35 * ld, 0.55, ss), a * 0.85);   // coil, then extend with the trailing leg kicked back
-    body.position.y = L(body.position.y, -0.4 * ld * (1 - ss), a); body.rotation.x = L(body.rotation.x, 0.12 * ld * (1 - ss) - 0.14 * ss, a);
-    if (P.head) P.head.rotation.x = L(P.head.rotation.x, -0.12 * ss, a);
+    P.hipL.rotation.x = L(P.hipL.rotation.x, L(-0.5 * ld, 0.3, ss), a * 0.85); P.hipR.rotation.x = L(P.hipR.rotation.x, L(-0.35 * ld, -1.15, ss), a * 0.9);   // coil, then the fadeaway: lean back and kick one leg out
+    body.position.y = L(body.position.y, -0.4 * ld * (1 - ss), a); body.rotation.x = L(body.rotation.x, 0.12 * ld * (1 - ss) - 0.42 * ss, a);
+    if (P.head) P.head.rotation.x = L(P.head.rotation.x, -0.22 * ss, a);
   }
   limbBends(P, runAmt);
   if (flipX !== null) { F.rotation.x = flipX; F.rotation.y = flipY; }
@@ -2184,10 +2213,13 @@ function placeEdge(m, a, b, w) {
   m.lookAt(B);
 }
 function mkClearGroup(g) { while (g.children.length) { const c = g.children[0]; g.remove(c); if (c.geometry && c.geometry !== edgeGeo && !c.userData.shared) c.geometry.dispose(); } }
+const mkSelFill = new THREE.MeshBasicMaterial({ color: 0x2BD9FF, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }); noOl(mkSelFill);
+const mkSelEdge = new THREE.MeshBasicMaterial({ color: 0x2BD9FF, depthTest: false }); noOl(mkSelEdge);
+MK.selPlane = null;
 function mkPolys() {
-  return MK.data.planes.map(pl => {
+  return MK.data.planes.map((pl, i) => {
     const pts = pl.ids.map(mkById).filter(Boolean).map(p => p.p);
-    return { pts, tris: triPoly(pts), c: pl.c };
+    return { pts, tris: triPoly(pts), c: pl.c, i };
   }).filter(o => o.pts.length >= 3);
 }
 const ptGeo = new THREE.SphereGeometry(0.22, 14, 10);
@@ -2199,7 +2231,11 @@ function mkRebuild() {
     const pos = new Float32Array(o.tris.length * 9); let k = 0;
     for (const t of o.tris) for (const i of t) { pos[k++] = o.pts[i][0]; pos[k++] = o.pts[i][1]; pos[k++] = o.pts[i][2]; }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, mkPlaneMat(o.c)); MK.gF.add(m); MK.solids.push(m);
+    const m = new THREE.Mesh(g, mkPlaneMat(o.c)); m.userData.pi = o.i; MK.gF.add(m); MK.solids.push(m);
+    if (MK.selPlane === o.i) {   // the selected plane glows cyan
+      const hg = g.clone(), hm = new THREE.Mesh(hg, mkSelFill); hm.renderOrder = 3; MK.gE.add(hm);
+      for (let k = 0; k < o.pts.length; k++) { const e = new THREE.Mesh(edgeGeo, mkSelEdge); e.userData.shared = true; placeEdge(e, o.pts[k], o.pts[(k + 1) % o.pts.length], 0.12); e.renderOrder = 4; MK.gE.add(e); }
+    }
   }
   for (const e of D.edges) {
     const a = mkById(e[0]), b = mkById(e[1]); if (!a || !b) continue;
@@ -2212,11 +2248,18 @@ function mkRebuild() {
   }
   MK.gP.visible = !MK.explore;
   mkBounds();
-  mkEl('mkChip').textContent = `● ${D.points.length}   ╱ ${D.edges.length}   ▰ ${D.planes.length}`;
+  mkEl('mkChip').textContent = `Points ${D.points.length}   Lines ${D.edges.length}   Planes ${D.planes.length}`;
   mkLabels();
   mkEl('mkLine').classList.toggle('on', MK.chain.length > 0);
 }
+function mkSyncSlider() {
+  const th = mkEl('mkSlThumb'), MIN = -8, MAX = 30; if (!th) return;
+  th.style.top = ((1 - (Math.min(MAX, Math.max(MIN, MK.ch)) - MIN) / (MAX - MIN)) * 100) + '%';
+  mkEl('mkSlV').textContent = (MK.ch > 0 ? '+' : '') + MK.ch;
+  const z = document.querySelector('#mkSlTrack .zero'); if (z) z.style.top = ((1 - (0 - MIN) / (MAX - MIN)) * 100) + '%';
+}
 function mkLabels() {
+  mkSyncSlider();
   mkEl('mkPointL').textContent = MK.fp ? 'Point ' + MK.dist + 'm' : MK.ch === 0 ? 'Point' : 'Point ' + (MK.ch > 0 ? '↑' : '↓') + Math.abs(MK.ch);
 }
 function mkSetFP(on) {
@@ -2393,11 +2436,12 @@ function startMaker() {
   MK.saved = { camDist, DIST_MIN, DIST_MAX };
   camDist = 18; DIST_MIN = 7; DIST_MAX = 90;
   MK.pos.set(0, 0, 0); MK.face = 0; MK.yaw = Math.PI; MK.pitch = 0.5; MK.vy = 0; MK.grounded = true; MK.flipT = -1; MK.ch = 0; MK.chain = [];
+  MK.selPlane = null; MK.radial = null; MK.tool = null; mkEl('mkTool').hidden = true; mkEl('mkRad').style.display = 'none';
   MK.ball = null; MK.shot = null; MK.charging = false; MK.pbDown = 0; MK.shAmt = MK.shLoad = MK.shExt = 0; if (MK.ballMesh) MK.ballMesh.visible = false;
   MK.gr = null; mkEl('mkGrab').classList.remove('on'); MK.glideAmt = 0; MK.gliding = false;
   MK.camT.set(0, 2.2, 0); MK.fpLock = false; MK.sel = null; mkSetFP(false); mkEl('mkLook').classList.remove('on'); MK.explore = false; document.body.classList.remove('mk-explore');
   MK.rect = Object.assign({}, MK.tgt);
-  mkRebuild(); mkApplyRect(); mkEl('mkPanel').hidden = true;
+  mkRebuild(); mkApplyRect(); mkEl('mkPanel').hidden = true; mkSyncSlider();
   if (!MK.hinted) { MK.hinted = true; setTimeout(() => mkToast('Tap ● to drop a point. Hold it to shoot one!'), 900); }
 }
 function stopMaker() {
@@ -2466,29 +2510,49 @@ function mkGrabStep(dt, ix, iy, mx, mz) {
   B.face += wrapPi(Math.atan2(g.dir.x, g.dir.z) - B.face) * Math.min(1, 12 * dt);
   B.vy = 0; B.grounded = false; B.airT = 0; B.flipT = -1;
 }
-// solid planes: slide along walls, bump heads
-const mkSolidRay = new THREE.Raycaster();
+// solid planes: slide along walls, bump heads, and get pushed back out if one ever ends up inside him
+const mkSolidRay = new THREE.Raycaster(), mkSolidHs = [0.7, 1.3, 2.0, 2.7, 3.4];
+function mkWallHit(ox, oy, oz, dir, far) {   // nearest plane that counts as a wall for Tuto standing at P.y
+  mkSolidRay.ray.origin.set(ox, oy, oz); mkSolidRay.ray.direction.copy(dir); mkSolidRay.near = 0; mkSolidRay.far = far;
+  const hs = mkSolidRay.intersectObjects(MK.solids, false);
+  for (const x of hs) {
+    if (!x.face) continue; const n = x.face.normal, hn = Math.hypot(n.x, n.z), rise = x.point.y - MK.pos.y;
+    if (hn < 0.2 || rise <= 0.65) continue;                 // floors, and steps he can just walk up
+    if (Math.abs(n.y) > 0.5 && rise < 1.6) continue;        // a gentle ramp he can climb
+    return x;
+  }
+  return null;
+}
 function mkSolidSlide(dx, dz) {
   if (!MK.solids.length) return [dx, dz];
-  const P = MK.pos, len = Math.hypot(dx, dz), dir = new THREE.Vector3(dx / len, 0, dz / len);
-  for (let pass = 0; pass < 2; pass++) {
-    let hit = null;
-    for (const h of [0.7, 1.7, 2.7]) {
-      mkSolidRay.ray.origin.set(P.x, P.y + h, P.z); mkSolidRay.ray.direction.copy(dir); mkSolidRay.near = 0; mkSolidRay.far = TUTO_R + len;
-      const hs = mkSolidRay.intersectObjects(MK.solids, false);
-      for (const x of hs) { if (x.face && Math.abs(x.face.normal.y) < 0.5) { if (!hit || x.distance < hit.distance) hit = x; break; } }
+  const P = MK.pos; let len = Math.hypot(dx, dz); if (len < 1e-6) return [dx, dz];
+  const dir = new THREE.Vector3(dx / len, 0, dz / len);
+  for (let pass = 0; pass < 3; pass++) {
+    let hit = null; const px = -dir.z, pz = dir.x;
+    for (const h of mkSolidHs) for (const lat of [0, -0.55, 0.55]) {
+      const x = mkWallHit(P.x + px * lat, P.y + h, P.z + pz * lat, dir, TUTO_R + len); if (x && (!hit || x.distance < hit.distance)) hit = x;
     }
     if (!hit) break;
     const n = new THREE.Vector3(hit.face.normal.x, 0, hit.face.normal.z).normalize(); if (n.dot(dir) > 0) n.negate();
     const into = dx * n.x + dz * n.z; if (into < 0) { dx -= n.x * into; dz -= n.z * into; }
-    const l2 = Math.hypot(dx, dz); if (l2 < 1e-5) return [0, 0]; dir.set(dx / l2, 0, dz / l2);
+    len = Math.hypot(dx, dz); if (len < 1e-5) return [0, 0]; dir.set(dx / len, 0, dz / len);
   }
   return [dx, dz];
 }
+function mkSolidPush() {   // depenetrate: nothing may stay inside Tuto's body
+  if (!MK.solids.length) return; const P = MK.pos, d = new THREE.Vector3();
+  for (let it = 0; it < 2; it++) for (let k = 0; k < 8; k++) {
+    const a = k * Math.PI / 4; d.set(Math.sin(a), 0, Math.cos(a));
+    for (const h of mkSolidHs) { const x = mkWallHit(P.x, P.y + h, P.z, d, TUTO_R); if (x) { const back = TUTO_R - x.distance; P.x -= d.x * back; P.z -= d.z * back; } }
+  }
+}
 function mkHeadHit(P, reach) {
-  if (!MK.solids.length) return null;
-  mkSolidRay.ray.origin.set(P.x, P.y + HEADH, P.z); mkSolidRay.ray.direction.set(0, 1, 0); mkSolidRay.near = 0; mkSolidRay.far = reach;
-  const hs = mkSolidRay.intersectObjects(MK.solids, false); return hs.length ? hs[0].point.y : null;
+  if (!MK.solids.length) return null; let best = null;
+  for (const [ox, oz] of [[0, 0], [0.5, 0], [-0.5, 0], [0, 0.5], [0, -0.5]]) {
+    mkSolidRay.ray.origin.set(P.x + ox, P.y + HEADH, P.z + oz); mkSolidRay.ray.direction.set(0, 1, 0); mkSolidRay.near = 0; mkSolidRay.far = reach;
+    const hs = mkSolidRay.intersectObjects(MK.solids, false); if (hs.length && (best === null || hs[0].point.y < best)) best = hs[0].point.y;
+  }
+  return best;
 }
 // ---- shooting points: hold the Point button to wind up, let go to shoot the point through the air in an arc.
 // Any other move or button press freezes it where it is and it becomes a real point.
@@ -2542,6 +2606,10 @@ function mkShotStep(dt, rawMag) {
   if (B.shot) {
     const S = B.shot; S.t += dt;
     B.shAmt = S.t < 0.55 ? 1 : Math.max(0, 1 - (S.t - 0.55) / 0.25);
+    if (!B.gr && S.t < 0.7) {   // drift backwards as he fades away
+      let bx = -Math.sin(B.face) * 4.2 * (1 - S.t / 0.7) * dt, bz = -Math.cos(B.face) * 4.2 * (1 - S.t / 0.7) * dt;
+      if (B.solid) [bx, bz] = mkSolidSlide(bx, bz); B.pos.x += bx; B.pos.z += bz;
+    }
     B.shLoad = 1 - mkSS(0, 0.16, S.t); B.shExt = mkSS(0.04, 0.2, S.t);
     if (!S.rel && S.t >= 0.16) {
       S.rel = true; const pos = mkHandPos(1), vel = mkShotVel(S.power); mkBallFreeze();
@@ -2602,6 +2670,7 @@ function mkUpdate(dt) {
     P.x += dx; P.z += dz;
     if (mag > 0.1) B.face += wrapPi(Math.atan2(mx, mz) - B.face) * Math.min(1, 14 * dt);
   }
+  if (B.solid && !B.gr) mkSolidPush();
   const r = B.rect; P.x = THREE.MathUtils.clamp(P.x, r.x0 + 0.8, r.x1 - 0.8); P.z = THREE.MathUtils.clamp(P.z, r.z0 + 0.8, r.z1 - 0.8);
   // jump, flip, fall, land on built planes
   const ground = mkSurfaceBelow(P.x, P.y + 0.6, P.z);
@@ -2668,8 +2737,13 @@ function mkUpdate(dt) {
 // --- Maker buttons
 const mkBtn = (id, fn) => { const b = mkEl(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); mkBallFreeze(); fn(e); }); };
 mkBtn('mkLine', () => mkLine()); mkBtn('mkFill', mkFill); mkBtn('mkUndo', mkUndo); mkBtn('mkDel', mkDelete);
-mkBtn('mkUp', () => { if (MK.fp) MK.dist = Math.min(40, MK.dist + 0.5); else MK.ch = Math.min(40, MK.ch + 1); mkRebuild(); });
-mkBtn('mkDn', () => { if (MK.fp) MK.dist = Math.max(1, MK.dist - 0.5); else MK.ch = Math.max(-8, MK.ch - 1); mkRebuild(); });
+{
+  const tr = mkEl('mkSlTrack'); let on = false, MIN = -8, MAX = 30;
+  const setFrom = y => { const r = tr.getBoundingClientRect(), f = 1 - Math.min(1, Math.max(0, (y - r.top) / r.height)), v = Math.round(MIN + f * (MAX - MIN)); if (v !== MK.ch) { MK.ch = v; mkRebuild(); } };
+  tr.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { tr.setPointerCapture(e.pointerId); } catch (_) { } mkBallFreeze(); on = true; setFrom(e.clientY); });
+  tr.addEventListener('pointermove', e => { if (on) setFrom(e.clientY); });
+  for (const ev of ['pointerup', 'pointercancel']) tr.addEventListener(ev, () => { on = false; });
+}
 mkBtn('mkMenu', () => { mkEl('mkPanel').hidden = false; });
 mkEl('mkPanel').addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === mkEl('mkPanel')) mkEl('mkPanel').hidden = true; });
 mkEl('mkClose').addEventListener('click', () => { mkEl('mkPanel').hidden = true; });
@@ -2714,7 +2788,8 @@ function mkTap(x, y) {
     const v = new THREE.Vector3(...p.p).project(MK.cam); if (v.z > 1 || v.z < -1) continue;
     const d = Math.hypot((v.x * 0.5 + 0.5) * innerWidth - x, (-v.y * 0.5 + 0.5) * innerHeight - y); if (d < bd) { bd = d; best = p; }
   }
-  if (!best) { if (MK.sel) { MK.sel = null; mkRebuild(); } return; }
+  if (MK.tool) return;
+  if (!best) { if (MK.sel || MK.selPlane != null) { MK.sel = null; MK.selPlane = null; mkRebuild(); } return; }
   if (MK.chain.length) return mkLine(best);
   MK.sel = MK.sel === best.id ? null : best.id; mkRebuild();
   mkToast(MK.sel ? 'Point selected. Line starts from it, Delete removes it' : 'Deselected');
@@ -2722,9 +2797,9 @@ function mkTap(x, y) {
 // Point button: tap = place a point 3 steps ahead, hold = wind up a shot, let go = shoot
 {
   const pb = mkEl('mkPoint');
-  pb.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { pb.setPointerCapture(e.pointerId); } catch (_) { } mkBallFreeze(); MK.pbDown = performance.now(); MK.charging = false; });
+  pb.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { pb.setPointerCapture(e.pointerId); } catch (_) { } mkBallFreeze(); MK.pbDown = performance.now(); MK.charging = false; pb.classList.add('held'); });
   const up = e => {
-    if (!MK.pbDown) return; MK.pbDown = 0;
+    pb.classList.remove('held'); if (!MK.pbDown) return; MK.pbDown = 0;
     if (MK.charging) mkShootRelease(); else if (e.type === 'pointerup') mkPlacePoint();
   };
   pb.addEventListener('pointerup', up); pb.addEventListener('pointercancel', up);
@@ -2754,7 +2829,7 @@ const mkDragHit = (x, y, plane) => { const rc = new THREE.Raycaster(); rc.setFro
 let mkHoldT = 0;
 function mkDragStart(x, y) {
   if (MK.explore || modeKind !== 'maker' || MK.chain.length) return;
-  const t = mkPickAt(x, y); if (!t) return;
+  const t = mkPickAt(x, y); if (!t) return mkRadialOpen(x, y);
   const pts = t.ids.map(mkById); const c = new THREE.Vector3(); pts.forEach(q => c.add(new THREE.Vector3(...q.p))); c.divideScalar(pts.length);
   const n = MK.dragV ? MK.cam.getWorldDirection(new THREE.Vector3()).setY(0).normalize().negate() : new THREE.Vector3(0, 1, 0);
   const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, c), h0 = mkDragHit(x, y, plane); if (!h0) return;
@@ -2774,6 +2849,75 @@ function mkDragEnd() { if (!MK.drag) return; MK.drag = null; MK.sel = null; mkCo
 cvs.addEventListener('pointerdown', e => { clearTimeout(mkHoldT); if (modeKind === 'maker' && camPtrs.size === 1) { const x = e.clientX, y = e.clientY; mkHoldT = setTimeout(() => { if (mkTapDown && Math.hypot(mkTapDown.x - x, mkTapDown.y - y) < 12) mkDragStart(x, y); }, 380); } });
 cvs.addEventListener('pointermove', e => { if (MK.drag) mkDragMove(e.clientX, e.clientY); });
 for (const ev of ['pointerup', 'pointercancel']) cvs.addEventListener(ev, () => { clearTimeout(mkHoldT); mkDragEnd(); });
+// ---- hold a plane: R / S / T / E letters pop up; slide onto one to edit the plane (Rotate, Scale, Transform, Extrude)
+const MK_TOOLS = [['R', 'Rotate'], ['S', 'Scale'], ['T', 'Transform'], ['E', 'Extrude']];
+function mkPlaneAt(x, y) {
+  const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1), MK.cam);
+  const hs = rc.intersectObjects(MK.solids, false); return hs.length ? hs[0].object.userData.pi : null;
+}
+function mkRadialOpen(x, y) {
+  if (MK.tool) return;
+  const pi = mkPlaneAt(x, y); if (pi == null) return;
+  MK.selPlane = pi; MK.sel = null; mkRebuild(); mkTapDown = null;
+  const rad = mkEl('mkRad'), cx = Math.min(innerWidth - 150, Math.max(150, x)), cy = Math.max(100, y - 84);
+  rad.innerHTML = ''; MK.radial = { items: [], hover: null };
+  MK_TOOLS.forEach(([k], n) => { const i = document.createElement('i'); i.textContent = k; const px = cx + (n - 1.5) * 62, py = cy; i.style.left = px + 'px'; i.style.top = py + 'px'; rad.appendChild(i); MK.radial.items.push({ k, x: px, y: py, el: i }); });
+  rad.style.display = 'block'; try { navigator.vibrate && navigator.vibrate(18); } catch (_) { }
+}
+function mkRadialMove(x, y) {
+  const R = MK.radial; if (!R) return; let h = null;
+  for (const it of R.items) if (Math.hypot(it.x - x, it.y - y) < 34) h = it;
+  R.hover = h; R.items.forEach(it => it.el.classList.toggle('hot', it === h));
+}
+function mkRadialEnd() {
+  const R = MK.radial; if (!R) return; MK.radial = null; mkEl('mkRad').style.display = 'none';
+  if (R.hover) mkToolOpen(R.hover.k);
+}
+cvs.addEventListener('pointermove', e => { if (MK.radial) mkRadialMove(e.clientX, e.clientY); });
+for (const ev of ['pointerup', 'pointercancel']) cvs.addEventListener(ev, () => { clearTimeout(mkHoldT); mkRadialEnd(); });
+const mkPlaneCenter = pts => pts.reduce((a, q) => a.add(new THREE.Vector3(...q.p)), new THREE.Vector3()).divideScalar(pts.length);
+function mkExtrude(D, pi, d) {
+  const pl = D.planes[pi]; if (!pl || !d) return; const ids = pl.ids, P = ids.map(id => D.points.find(q => q.id === id)); if (P.some(q => !q)) return;
+  const n = new THREE.Vector3();
+  for (let i = 0; i < P.length; i++) { const a = P[i].p, b = P[(i + 1) % P.length].p; n.x += (a[1] - b[1]) * (a[2] + b[2]); n.y += (a[2] - b[2]) * (a[0] + b[0]); n.z += (a[0] - b[0]) * (a[1] + b[1]); }
+  if (n.lengthSq() < 1e-8) return; n.normalize();
+  if (Math.abs(n.y) > 0.2) { if (n.y < 0) n.negate(); } else { const c = mkPlaneCenter(P); if (n.dot(MK.cam.position.clone().sub(c)) < 0) n.negate(); }
+  const nid = ids.map(() => D.next++), has = (a, b) => D.edges.some(e => (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a));
+  P.forEach((q, k) => D.points.push({ id: nid[k], p: [q.p[0] + n.x * d, q.p[1] + n.y * d, q.p[2] + n.z * d].map(v => Math.round(v * 1000) / 1000) }));
+  const add = (a, b) => { if (!has(a, b)) D.edges.push([a, b]); };
+  for (let k = 0; k < ids.length; k++) { const j = (k + 1) % ids.length; add(ids[k], ids[j]); add(ids[k], nid[k]); add(nid[k], nid[j]); D.planes.push({ ids: [ids[k], ids[j], nid[j], nid[k]], c: pl.c }); }
+  pl.ids = nid;
+}
+function mkToolApply() {
+  const T = MK.tool; if (!T) return; MK.data = JSON.parse(T.snap); const D = MK.data, pl = D.planes[T.pi]; if (!pl) return;
+  const pts = pl.ids.map(id => D.points.find(q => q.id === id)).filter(Boolean), c = mkPlaneCenter(pts), r3 = v => Math.round(v * 1000) / 1000, v = T.v;
+  if (T.k === 'R') { const ax = new THREE.Vector3(v.axis === 'x' ? 1 : 0, v.axis === 'y' ? 1 : 0, v.axis === 'z' ? 1 : 0), q = new THREE.Quaternion().setFromAxisAngle(ax, v.deg * Math.PI / 180); pts.forEach(o => { const w = new THREE.Vector3(...o.p).sub(c).applyQuaternion(q).add(c); o.p = [r3(w.x), r3(w.y), r3(w.z)]; }); }
+  if (T.k === 'S') pts.forEach(o => { const w = new THREE.Vector3(...o.p).sub(c); if (v.axis === 'all' || v.axis === 'x') w.x *= v.k; if (v.axis === 'all' || v.axis === 'y') w.y *= v.k; if (v.axis === 'all' || v.axis === 'z') w.z *= v.k; w.add(c); o.p = [r3(w.x), r3(w.y), r3(w.z)]; });
+  if (T.k === 'T') pts.forEach(o => { o.p = [r3(o.p[0] + v.x), r3(o.p[1] + v.y), r3(o.p[2] + v.z)]; });
+  if (T.k === 'E') mkExtrude(D, T.pi, v.d);
+  mkRebuild();
+}
+function mkToolOpen(k) {
+  if (MK.selPlane == null || !MK.data.planes[MK.selPlane]) return;
+  const defs = { R: { axis: 'y', deg: 0 }, S: { axis: 'all', k: 1 }, T: { x: 0, y: 0, z: 0 }, E: { d: 0 } };
+  const T = MK.tool = { k, snap: JSON.stringify(MK.data), pi: MK.selPlane, v: { ...defs[k] } };
+  mkEl('mtName').textContent = MK_TOOLS.find(t => t[0] === k)[1] + ' plane';
+  const body = mkEl('mtBody'); body.innerHTML = '';
+  const row = (label, min, max, step, val, fmt, on) => { const d = document.createElement('div'); d.className = 'mt-row'; d.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${val}"><em></em>`; const inp = d.querySelector('input'), em = d.querySelector('em'); const upd = () => { em.textContent = fmt(+inp.value); }; inp.addEventListener('input', () => { upd(); on(+inp.value); mkToolApply(); }); upd(); body.appendChild(d); };
+  const axes = (list, cur, on) => { const d = document.createElement('div'); d.className = 'mt-axes'; list.forEach(a => { const b = document.createElement('button'); b.textContent = a.toUpperCase(); b.classList.toggle('on', a === cur); b.addEventListener('click', () => { [...d.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); on(a); mkToolApply(); }); d.appendChild(b); }); body.appendChild(d); };
+  if (k === 'R') { axes(['x', 'y', 'z'], 'y', a => { T.v.axis = a; }); row('', -180, 180, 15, 0, x => x + '°', x => { T.v.deg = x; }); }
+  if (k === 'S') { axes(['all', 'x', 'y', 'z'], 'all', a => { T.v.axis = a; }); row('', 0.25, 3, 0.05, 1, x => '×' + x.toFixed(2), x => { T.v.k = x; }); }
+  if (k === 'T') { ['x', 'y', 'z'].forEach(a => row(a.toUpperCase(), -12, 12, 0.5, 0, x => (x > 0 ? '+' : '') + x, x => { T.v[a] = x; })); }
+  if (k === 'E') row('', -10, 10, 0.5, 0, x => (x > 0 ? '+' : '') + x, x => { T.v.d = x; });
+  mkEl('mkTool').hidden = false;
+}
+function mkToolClose(apply) {
+  const T = MK.tool; if (!T) return; MK.tool = null; mkEl('mkTool').hidden = true;
+  if (apply) { const cur = MK.data; MK.data = JSON.parse(T.snap); mkPush(); MK.data = cur; mkCommit(); mkToast('Plane updated'); }
+  else { MK.data = JSON.parse(T.snap); mkRebuild(); }
+}
+mkEl('mtOk').addEventListener('click', () => mkToolClose(true)); mkEl('mtNo').addEventListener('click', () => mkToolClose(false));
+mkEl('mkTool').addEventListener('pointerdown', e => e.stopPropagation());
 let mkTapDown = null;
 cvs.addEventListener('pointerdown', e => { mkTapDown = modeKind === 'maker' && camPtrs.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
 cvs.addEventListener('pointermove', e => { if (mkTapDown && Math.hypot(e.clientX - mkTapDown.x, e.clientY - mkTapDown.y) > 12) mkTapDown = null; });

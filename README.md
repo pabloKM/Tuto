@@ -83,3 +83,8 @@ A 3D endless runner by the Trouble Makers. Swipe left/right to change lanes, swi
 ### Tuto Maker: shooting points
 - Tap **●** to drop a point ahead of Tuto. **Hold** it and Tuto winds up a jump shot (dotted arc shows the flight; hold longer = farther). Let go and he hops, extends, flicks, and the point flies in an arc in the direction he faces (or where you aim in Look mode).
 - While it flies, any other input (stick, jump, any button or key) freezes it in the air as a real point. If nothing interrupts it, it freezes where it lands.
+
+### Tuto Maker: layout and plane tools
+- Height slider (left, above the stick) sets how high new points go. **●** is a round button left of Jump (tap = place, hold = shoot, with a fadeaway lean and a kicked-out leg). Menu is the ☰ at the top right; the triangle at the top left goes back to the planet. Counts show at the top of the screen.
+- Hold a plane: R / S / T / E pop up. Slide onto one and let go to get its controls: **Rotate** (axis + angle), **Scale** (all or one axis), **Transform** (X/Y/Z move), **Extrude** (pulls the plane out along its normal and adds the side walls). ✓ applies (Undo reverts), ✕ cancels.
+- Solid planes now also push Tuto back out if one ends up inside him, and block him at corners and from below.
