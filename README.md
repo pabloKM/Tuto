@@ -101,3 +101,5 @@ Tap **👥 Play together** in Jam to start or join a room (same codes as the pla
 
 ### Dribbling (Tuto Maker)
 Tuto now always has a basketball in Maker (toggle with **🏀 Dribble** in the ☰ menu). Standing still he dances while handling it: same-hand dribbles, crossovers, between the legs, behind the back, plus occasional show moves (spinning the ball on a fingertip, rolling it across his arms). Moving he dribbles on the run, and when you reverse or switch direction he does a one-foot spin or a juke. Both hands are placed on the ball with a small two-bone arm solver. The ball disappears for the jump shot, grabs, flips, glides and when a rival has him.
+
+The dribbled ball is now the same ball Tuto shoots as a point, and it takes the colour picked in the Maker menu (the swatch row).

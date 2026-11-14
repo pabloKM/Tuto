@@ -2663,6 +2663,17 @@ function mkHeadHit(P, reach) {
 // Any other move or button press freezes it where it is and it becomes a real point.
 Object.assign(MK, { pbDown: 0, charging: false, chargeT: 0, shot: null, ball: null, shAmt: 0, shLoad: 0, shExt: 0 });
 const SH_G = 30, mkBallMat = new THREE.MeshBasicMaterial({ color: 0xFF3D7F }); noOl(mkBallMat);
+// one ball for everything: the one Tuto dribbles is the one he shoots as a point, and it wears the colour picked in the menu
+const mkBallBody = new THREE.MeshToonMaterial({ color: 0xFF6B5B, gradientMap: ramp }), mkSeamMat = noOl(new THREE.MeshBasicMaterial({ color: 0x161216 }));
+function mkBallPaint() {
+  const c = new THREE.Color(MKC[MK.color] !== undefined ? MKC[MK.color] : 0xFF6B5B); mkBallBody.color.copy(c); mkBallMat.color.copy(c);
+  mkSeamMat.color.setHex((c.r * 0.3 + c.g * 0.59 + c.b * 0.11) < 0.2 ? 0xF3EEE6 : 0x161216);
+}
+function mkMakeBall(r) {
+  const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.SphereGeometry(r, 22, 16), mkBallBody));
+  for (const [rx, ry] of [[0, 0], [Math.PI / 2, 0], [0, Math.PI / 2]]) { const t = new THREE.Mesh(new THREE.TorusGeometry(r * 1.004, r * 0.05, 6, 30), mkSeamMat); t.rotation.set(rx, ry, 0); g.add(t); }
+  mkBallPaint(); return g;
+}
 const mkSS = (a, b, x) => { const u = Math.min(1, Math.max(0, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
 const mkHandBox = new THREE.Box3();
 function mkReadHand() {   // where the shooting hand really is (after posing)
@@ -2680,7 +2691,7 @@ function mkShotVel(power) {
   return dir.multiplyScalar(sp);
 }
 function mkBallMesh() {
-  if (!MK.ballMesh) { MK.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), mkBallMat); MK.gU.add(MK.ballMesh); }
+  if (!MK.ballMesh) { MK.ballMesh = mkMakeBall(DB.R * MK_SCALE); MK.gU.add(MK.ballMesh); }
   return MK.ballMesh;
 }
 function mkBallFreeze(why) {
@@ -2851,9 +2862,7 @@ const dbSm = (a, b, x) => { const u = Math.min(1, Math.max(0, (x - a) / (b - a))
 MK.dribble = true;
 function dbState() {
   if (MK.db) return MK.db;
-  const g = new THREE.Group(), r = DB.R; g.add(mesh(new THREE.SphereGeometry(r, 22, 16), 0xE8702A));
-  const seam = noOl(new THREE.MeshBasicMaterial({ color: 0x161216 }));
-  for (const [rx, ry] of [[0, 0], [Math.PI / 2, 0], [0, Math.PI / 2]]) { const t = new THREE.Mesh(new THREE.TorusGeometry(r * 1.004, r * 0.05, 6, 30), seam); t.rotation.set(rx, ry, 0); g.add(t); }
+  const g = mkMakeBall(DB.R);
   const sh = new THREE.Mesh(new THREE.CircleGeometry(0.2, 18).rotateX(-Math.PI / 2), noOl(new THREE.MeshBasicMaterial({ color: 0x161216, transparent: true, opacity: 0.28, depthWrite: false })));
   g.visible = sh.visible = false; MK.hero.root.add(g, sh);
   const D = { k: 0, bobY: 0, shX: 0, leanX: 0, leanZ: 0, headX: 0, headZ: 0, legW: 0, hipL: 0, hipR: 0, knL: 0, knR: 0, spread: 0, yaw: 0, T: { R: new THREE.Vector3(), L: new THREE.Vector3() }, w: { R: 0, L: 0 }, q: { R: [-0.4, -0.5, -0.7], L: [-0.4, -0.5, -0.7] } };
@@ -3080,7 +3089,7 @@ mkBtn('mkMenu', () => { mkEl('mkPanel').hidden = false; });
 mkEl('mkPanel').addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === mkEl('mkPanel')) mkEl('mkPanel').hidden = true; });
 mkEl('mkClose').addEventListener('click', () => { mkEl('mkPanel').hidden = true; });
 const mkSw = mkEl('mkSw');
-MKC.forEach((col, i) => { const s = document.createElement('i'); s.style.background = hexCss(col); s.addEventListener('click', () => { MK.color = i; [...mkSw.children].forEach((x, j) => x.classList.toggle('on', j === i)); }); mkSw.appendChild(s); });
+MKC.forEach((col, i) => { const s = document.createElement('i'); s.style.background = hexCss(col); s.addEventListener('click', () => { MK.color = i; mkBallPaint(); [...mkSw.children].forEach((x, j) => x.classList.toggle('on', j === i)); }); mkSw.appendChild(s); });
 mkSw.children[MK.color].classList.add('on');
 function mkSetExplore(on) {
   MK.explore = on; document.body.classList.toggle('mk-explore', on); MK.chain = []; MK.sel = null; if (on) { MK.fpLock = false; mkEl('mkLook').classList.remove('on'); mkSetFP(false); } mkEl('mkPanel').hidden = true; mkRebuild();
