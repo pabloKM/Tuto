@@ -295,6 +295,7 @@
     <h3>Tuto Maker</h3>
     <div id="mkSw"></div>
     <div class="mkgrid">
+      <button class="wide" id="mkDrib">🏀 Dribble: on</button>
       <button class="wide" id="mkExplore">▶ Explore it as Tuto</button>
       <button id="mkSaveB">💾 Save</button><button id="mkLoadB">📂 Load</button>
       <button id="mkGltf">⬇ .gltf</button><button id="mkObj">⬇ .obj</button>
@@ -1151,6 +1152,50 @@ function placeCharacter(ch, u, f, h) {
 // ---------- shared character posing (used for you and for other players) ----------
 function newAnim() { return { runPhase: 0, runAmt: 0, blinkAt: 1500 + Math.random() * 2500, blinkStart: -1e4, spinV: 0 }; }
 hero.anim = newAnim();
+// ---- two-bone arm IK (used by the dribble): shoulder at (-0.24, 1.33, 0) for Tuto's right arm; the other arm is solved mirrored
+const IK_S = [-0.24, 1.33, 0], IK_L1 = 0.27, IK_L2 = 0.27, IK_Q0 = [-0.45, -0.5, -0.7];
+const IK_LO = [-2.9, -3.0, -2.6], IK_HI = [0.5, 1.3, 0];
+function ikFK(q, o) {
+  const st = Math.sin(q[0]), ct = Math.cos(q[0]), sp = Math.sin(q[1]), cp = Math.cos(q[1]), se = Math.sin(q[2]), ce = Math.cos(q[2]);
+  const ux = st, uy = -ct * cp, uz = -ct * sp;
+  o[0] = IK_S[0] + IK_L1 * ux + IK_L2 * ux * ce; o[1] = IK_S[1] + IK_L1 * uy + IK_L2 * (uy * ce + sp * se); o[2] = IK_S[2] + IK_L1 * uz + IK_L2 * (uz * ce - cp * se);
+}
+const _ikH = [0, 0, 0], _ikH2 = [0, 0, 0];
+function ikSolve(q, tx, ty, tz) {
+  for (let it = 0; it < 4; it++) {
+    ikFK(q, _ikH); const r = [tx - _ikH[0], ty - _ikH[1], tz - _ikH[2]], J = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (let j = 0; j < 3; j++) { const qq = q.slice(); qq[j] += 1e-3; ikFK(qq, _ikH2); for (let i = 0; i < 3; i++) J[i][j] = (_ikH2[i] - _ikH[i]) / 1e-3; }
+    const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], b = [0, 0, 0], lam = 0.03;
+    for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) { let s = 0; for (let k = 0; k < 3; k++) s += J[k][i] * J[k][j]; A[i][j] = s + (i === j ? lam : 0); } let s = 0; for (let k = 0; k < 3; k++) s += J[k][i] * r[k]; b[i] = s + 0.03 * (IK_Q0[i] - q[i]); }
+    const det = A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+    if (Math.abs(det) < 1e-9) return;
+    const dq = [0, 0, 0];
+    for (let c = 0; c < 3; c++) { const M = A.map(row => row.slice()); for (let i = 0; i < 3; i++) M[i][c] = b[i]; dq[c] = (M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0])) / det; }
+    for (let j = 0; j < 3; j++) q[j] = Math.min(IK_HI[j], Math.max(IK_LO[j], q[j] + Math.max(-0.6, Math.min(0.6, dq[j]))));
+  }
+}
+const _dbM = new THREE.Matrix4(), _dbV = new THREE.Vector3();
+const legDrop = (hip, kn) => 0.69 - (0.35 * Math.cos(hip) + 0.34 * Math.cos(hip + kn));
+// the dribble's pose layer: runs after the base pose so it can lean, bend the legs and put each hand exactly on the ball
+function dbApplyPose(ch, D, dt) {
+  const P = ch.parts, body = ch.body, k = D.k, L = (a, b, w) => a + (b - a) * w;
+  body.position.y += D.bobY * k; body.position.x = D.shX * k; body.rotation.x += D.leanX * k; body.rotation.z += D.leanZ * k;
+  P.head.rotation.x += D.headX * k; P.head.rotation.z += D.headZ * k;
+  if (D.legW > 0.002) {
+    const w = D.legW * k, aL = L(P.hipL.rotation.x, D.hipL, w), aR = L(P.hipR.rotation.x, D.hipR, w), kL = L(P.knL.rotation.x, D.knL, w), kR = L(P.knR.rotation.x, D.knR, w);
+    P.hipL.rotation.x = aL; P.hipR.rotation.x = aR; P.knL.rotation.x = kL; P.knR.rotation.x = kR;
+    P.hipL.rotation.z = L(P.hipL.rotation.z, -D.spread, w); P.hipR.rotation.z = L(P.hipR.rotation.z, D.spread, w);
+    body.position.y -= Math.max(0, Math.min(legDrop(aL, kL), legDrop(aR, kR))) * w;
+  }
+  body.updateMatrix(); _dbM.copy(body.matrix).invert();
+  for (const h of ['R', 'L']) {
+    const T = D.T[h]; if (!T) continue;
+    const sh = h === 'R' ? P.shL : P.shR, el = h === 'R' ? P.elL : P.elR, q = D.q[h], sg = h === 'R' ? 1 : -1;
+    _dbV.copy(T).applyMatrix4(_dbM); ikSolve(q, _dbV.x * sg, _dbV.y, _dbV.z);
+    const w = D.w[h] * k;
+    sh.rotation.z = L(sh.rotation.z, q[0] * sg, w); sh.rotation.x = L(sh.rotation.x, q[1], w); el.rotation.x = L(el.rotation.x, q[2], w);
+  }
+}
 function poseCharacter(ch, s, dt) {
   const P = ch.parts, F = P.flip, A = ch.anim;
   const mag = s.mag, grounded = s.grounded, zr = s.zr ? 1 : 0;
@@ -1293,6 +1338,7 @@ function poseCharacter(ch, s, dt) {
     if (P.head) P.head.rotation.x = L(P.head.rotation.x, -0.22 * ss, a);
   }
   limbBends(P, runAmt);
+  if (s.db && s.db.k > 0.002) dbApplyPose(ch, s.db, dt);
   if (flipX !== null) { F.rotation.x = flipX; F.rotation.y = flipY; }
   else {
     const kk = Math.min(1, 14 * dt);
@@ -2497,6 +2543,7 @@ function startMaker() {
   mkClearFoes(); MK.selPlane = null; MK.radial = null; MK.tool = null; mkEl('mkTool').hidden = true; mkEl('mkRad').style.display = 'none';
   MK.ball = null; MK.shot = null; MK.charging = false; MK.pbDown = 0; MK.shAmt = MK.shLoad = MK.shExt = 0; if (MK.ballMesh) MK.ballMesh.visible = false;
   MK.gr = null; mkEl('mkGrab').classList.remove('on'); MK.glideAmt = 0; MK.gliding = false;
+  if (MK.db) { const d = MK.db; d.k = 0; d.D.k = 0; d.beat = null; d.sp = null; d.rt = null; d.queue = []; d.hand = 'R'; d.idleT = 0; d.bp.set(-DB.HX, DB.TOP, 0.38); d.g.visible = d.sh.visible = false; }
   MK.camT.set(0, 2.2, 0); MK.fpLock = false; MK.sel = null; mkSetFP(false); mkEl('mkLook').classList.remove('on'); MK.explore = false; document.body.classList.remove('mk-explore');
   MK.rect = Object.assign({}, MK.tgt);
   mkRebuild(); mkApplyRect(); mkEl('mkPanel').hidden = true; mkSyncSlider();
@@ -2796,6 +2843,132 @@ function mkFoesUpdate(dt) {
     if (sh.life <= 0) { MK.gS.remove(sh.m); MK.shards.splice(i, 1); }
   }
 }
+// ---- Dribbling: Tuto always has a basketball in Maker. Idle he dances while handling it (crossovers, between the legs, behind the back,
+// finger spins, rolling it across his arms). Moving he dribbles on the run, and when he flips direction he spins or jukes.
+const DB = { R: 0.2, TOP: 0.7, HX: 0.4 };
+const dbHx = h => h === 'R' ? -DB.HX : DB.HX, dbOther = h => h === 'R' ? 'L' : 'R';
+const dbSm = (a, b, x) => { const u = Math.min(1, Math.max(0, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+MK.dribble = true;
+function dbState() {
+  if (MK.db) return MK.db;
+  const g = new THREE.Group(), r = DB.R; g.add(mesh(new THREE.SphereGeometry(r, 22, 16), 0xE8702A));
+  const seam = noOl(new THREE.MeshBasicMaterial({ color: 0x161216 }));
+  for (const [rx, ry] of [[0, 0], [Math.PI / 2, 0], [0, Math.PI / 2]]) { const t = new THREE.Mesh(new THREE.TorusGeometry(r * 1.004, r * 0.05, 6, 30), seam); t.rotation.set(rx, ry, 0); g.add(t); }
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(0.2, 18).rotateX(-Math.PI / 2), noOl(new THREE.MeshBasicMaterial({ color: 0x161216, transparent: true, opacity: 0.28, depthWrite: false })));
+  g.visible = sh.visible = false; MK.hero.root.add(g, sh);
+  const D = { k: 0, bobY: 0, shX: 0, leanX: 0, leanZ: 0, headX: 0, headZ: 0, legW: 0, hipL: 0, hipR: 0, knL: 0, knR: 0, spread: 0, yaw: 0, T: { R: new THREE.Vector3(), L: new THREE.Vector3() }, w: { R: 0, L: 0 }, q: { R: [-0.4, -0.5, -0.7], L: [-0.4, -0.5, -0.7] } };
+  return MK.db = { g, sh, D, k: 0, t: 0, hand: 'R', beat: null, queue: [], idx: 0, bp: new THREE.Vector3(-DB.HX, DB.TOP, 0.38), snapT: 0, rt: null, sp: null, idleT: 0, nextShow: 5 + Math.random() * 3, showN: 0,
+    run: false, runT: 0, stopT: 9, prevRun: 0, startGap: 9, hd: 0, hdLast: 0, cool: 0, legW: 0, spinA: 0, rollA: 0, last: '' };
+}
+function dbPick(S, moving) {
+  if (S.queue.length) { S.beat = S.queue.shift(); S.beat.u = 0; S.beat.s = S.bp.clone(); return; }
+  const W = [['dr', moving ? 0.38 : 0.4], ['cx', moving ? 0.27 : 0.25], ['bb', moving ? 0.15 : 0.13], ['bl', moving ? 0.2 : 0.22]];
+  let r = Math.random(), type = 'dr'; for (const [n, w] of W) { if (r < w) { type = n; break; } r -= w; }
+  if (type !== 'dr' && S.last !== 'dr' && Math.random() < 0.6) type = 'dr';
+  S.last = type; S.beat = { type, from: S.hand, to: type === 'dr' ? S.hand : dbOther(S.hand), u: 0, dur: moving ? 0.46 : 0.5, s: S.bp.clone() };
+}
+function dbBallAt(b, u, o) {   // where the ball is during a beat (root-local)
+  const fall = u < 0.5 ? Math.pow(2 * u, 1.7) : Math.pow(2 * (1 - u), 1.7), y = DB.TOP - (DB.TOP - DB.R) * fall, x0 = dbHx(b.from), x1 = dbHx(b.to), sm = u * u * (3 - 2 * u);
+  let x = x0, z = 0.38;
+  if (b.type === 'cx') { x = x0 + (x1 - x0) * sm; z = 0.4 + 0.1 * Math.sin(u * Math.PI); }
+  else if (b.type === 'bb') { x = x0 + (x1 - x0) * sm; z = 0.05 - 0.5 * Math.sin(u * Math.PI); }
+  else if (b.type === 'bl') { x = x0 * 0.55 * (1 - sm) + x1 * 0.8 * sm; z = 0.42 - 0.72 * sm; }
+  const bi = dbSm(0, 0.3, u); o.set(b.s.x + (x - b.s.x) * bi, y, b.s.z + (z - b.s.z) * bi); return o;
+}
+const _dbA = new THREE.Vector3(), _dbB = new THREE.Vector3();
+function mkDribbleStep(dt, mag, mx, mz) {
+  const B = MK, S = dbState(), D = S.D, moving = mag > 0.1 && !B.gr && !B.held;
+  const free = !B.gr && !B.held && B.flipT < 0 && !B.gliding && !B.charging && !B.shot && B.shAmt < 0.05 && B.dribble;
+  const carry = free && !B.grounded, normal = free && B.grounded;
+  S.k += ((free ? 1 : 0) - S.k) * Math.min(1, 9 * dt); D.k = S.k;
+  const vis = S.k > 0.03; S.g.visible = S.sh.visible = vis;
+  if (!vis) { D.yaw = 0; return null; }
+  S.t += dt; D.yaw = 0; D.bobY = D.shX = D.leanX = D.leanZ = D.headX = D.headZ = 0; D.spread = 0.1;
+  D.T.R.set(0, 0, 0); D.T.L.set(0, 0, 0); D.w.R = D.w.L = 1;
+  const want = _dbA, tR = D.T.R, tL = D.T.L;
+  const guard = (h, out, amp) => { const sg = h === 'R' ? -1 : 1; out.set(sg * 0.6, 1.02 + amp * Math.sin(S.t * 9 + (h === 'R' ? 0 : 2)), 0.25); };
+  if (carry) {   // in the air: the ball rides in his right hand
+    S.legW += (0 - S.legW) * Math.min(1, 10 * dt); D.legW = S.legW; S.snapT = 0.2;
+    want.set(-0.52, 0.82, 0.32); S.bp.lerp(want, Math.min(1, 14 * dt));
+    tR.set(S.bp.x, S.bp.y + DB.R + 0.07, S.bp.z); guard('L', tL, 0.05); D.w.L = 0; D.leanX = 0.05;
+  } else {
+    // ---- reading the stick: runs, stops, and changes of direction
+    if (moving) {
+      if (!S.run) { S.run = true; S.runT = 0; S.startGap = S.stopT; }
+      S.runT += dt; const ang = Math.atan2(mx, mz);
+      if (S.runT <= dt * 1.5 && S.startGap < 0.55 && S.prevRun > 0.45) { /* handled below */ S.restart = Math.abs(wrapPi(ang - S.hdLast)); } else S.restart = 0;
+      if (mag > 0.45 && S.cool <= 0 && !S.sp) {
+        const dev = S.runT > 0.3 ? Math.abs(wrapPi(ang - S.hd)) : S.restart;
+        if ((S.runT > 0.3 && dev > 1.9) || (S.restart > 1.1)) {
+          const d = wrapPi(ang - (S.restart > 1.1 ? S.hdLast : S.hd)); const kind = (Math.abs(d) > 2.2 || Math.random() < 0.45) ? 'spin' : 'juke';
+          S.sp = { kind, u: 0, dur: kind === 'spin' ? 0.66 : 0.44, dir: d >= 0 ? 1 : -1 }; S.cool = 1.1; S.rt = null; S.hd = ang; S.snapT = 0.25;
+          if (kind === 'juke') { const f = S.hand; S.beat = { type: 'cx', from: f, to: dbOther(f), u: 0, dur: 0.22, s: S.bp.clone() }; S.queue = [{ type: 'cx', from: dbOther(f), to: f, dur: 0.22 }]; }
+        }
+      }
+      S.hd += wrapPi(ang - S.hd) * Math.min(1, 6 * dt); S.hdLast = S.hd; S.idleT = 0;
+    } else { if (S.run) { S.run = false; S.prevRun = S.runT; S.stopT = 0; } S.stopT += dt; S.idleT += dt; }
+    S.cool -= dt;
+    if (!moving && !S.sp && !S.rt && S.idleT > S.nextShow) { S.rt = { kind: S.showN++ % 2 ? 'roll' : 'spin', t: 0, dur: 2.7 }; S.snapT = 0.35; }
+    if (moving && S.rt) { S.rt = null; S.snapT = 0.3; S.beat = null; }
+    S.legW += ((moving || S.sp ? 0 : 1) - S.legW) * Math.min(1, 8 * dt);
+    let mode = 'beat', u = 0;
+    if (S.sp && S.sp.kind === 'spin') mode = 'spin'; else if (S.rt) mode = 'rt';
+    if (S.sp) { S.sp.u += dt / S.sp.dur; if (S.sp.u >= 1) { S.sp = null; S.snapT = 0.25; if (mode === 'spin') { S.beat = null; S.hand = 'R'; mode = 'beat'; } } }
+    if (S.rt) { S.rt.t += dt; if (S.rt.t >= S.rt.dur) { S.rt = null; S.snapT = 0.35; S.idleT = 0; S.nextShow = 5 + Math.random() * 5; S.beat = null; S.hand = 'R'; mode = 'beat'; } }
+    const ph = S.t;
+    if (mode === 'spin') {            // a pirouette on one foot with the ball tucked in
+      const sp = S.sp, e = dbSm(0, 1, sp.u);
+      D.yaw = sp.dir * Math.PI * 2 * e; want.set(-0.36, 0.98 + 0.03 * Math.sin(sp.u * 12), 0.42);
+      tR.set(want.x + 0.02, want.y + DB.R + 0.05, want.z - 0.02); tL.set(0.85, 1.25, 0.05); D.leanX = 0.15; D.bobY = -0.04;
+      D.legW = 1; D.hipL = -0.15; D.hipR = -0.95 * Math.sin(Math.PI * sp.u) - 0.1; D.knL = 0.25; D.knR = 0.9 * Math.sin(Math.PI * sp.u) + 0.3; D.spread = 0.05; D.legW = 1 * Math.min(1, 1 - 0);
+      S.legWf = 1;
+    } else if (mode === 'rt') {
+      const r = S.rt, ease = Math.min(1, r.t / 0.4) * Math.min(1, (r.dur - r.t) / 0.4);
+      D.legW = 1; const st = Math.PI * r.t * 2.0;
+      D.hipL = -0.5 + 0.3 * Math.sin(st); D.hipR = -0.5 - 0.3 * Math.sin(st); D.knL = Math.min(1.6, 0.4 - D.hipL * 0.9); D.knR = Math.min(1.6, 0.4 - D.hipR * 0.9); D.spread = 0.14;
+      D.bobY = -0.03 * Math.abs(Math.sin(st));
+      if (r.kind === 'spin') {      // ball spinning on a fingertip, held out beside the head
+        D.shX = -0.42 * ease; D.leanX = 0.04; D.headZ = 0.08 * ease;
+        want.set(-1.24 + 0.03 * Math.sin(r.t * 7), 1.86 + 0.02 * Math.sin(r.t * 9), 0.2 + 0.02 * Math.cos(r.t * 6));
+        tR.set(want.x + 0.02, want.y - DB.R - 0.04, want.z); guard('L', tL, 0.12); tL.set(0.6, 1.25 + 0.15 * Math.sin(r.t * 5), 0.3);
+        S.g.rotation.y += dt * 26;
+      } else {                      // ball rolling from one arm across the chest to the other
+        const x = -0.46 * Math.cos(r.t * 2 * Math.PI / 1.15); want.set(x, 1.47 + 0.02 * Math.abs(Math.sin(r.t * 5)), 0.5);
+        tR.set(-0.42, 1.15, 0.48); tL.set(0.42, 1.15, 0.48); D.leanX = -0.08 * ease; D.headX = 0.08;
+        S.g.rotation.z -= (x - S.bp.x) / DB.R;
+      }
+    } else {
+      // ---- dribbling beats
+      if (!S.beat) dbPick(S, moving);
+      let b = S.beat; b.u += dt / b.dur; if (b.u >= 1) { S.hand = b.to; S.idx++; dbPick(S, moving); b = S.beat; }
+      u = b.u; dbBallAt(b, u, want);
+      const wf = b.from === b.to ? 1 : 1 - dbSm(0.45, 0.8, u), wt = b.from === b.to ? 0 : dbSm(0.5, 0.85, u);
+      const top = _dbB.set(want.x, Math.max(0.5, want.y + DB.R + 0.07), want.z), amp = moving ? 0.06 : 0.14;
+      for (const h of ['R', 'L']) {
+        const T = D.T[h], w = h === b.from ? wf : h === b.to ? wt : 0; guard(h, T, amp);
+        if (!moving && h !== b.from && h !== b.to) T.y += 0.16 * Math.sin(S.t * 6.28 / (DB.R * 5));
+        T.lerp(top, w);
+      }
+      // body: lean over the ball, bob with the bounce; idle he steps and sways to it
+      const bounce = 0.5 + 0.5 * Math.cos(u * Math.PI * 2);
+      D.leanX = moving ? 0.14 : 0.2; D.bobY = -0.05 * bounce; D.leanZ = moving ? 0 : 0.06 * Math.sin((S.idx + u) * Math.PI);
+      D.headZ = moving ? 0 : 0.07 * Math.sin((S.idx + u) * Math.PI); D.headX = 0.05 * bounce;
+      D.legW = S.legW; if (S.legW > 0.01) {
+        const ps = Math.PI * (S.idx + u), a = Math.sin(ps), spl = b.type === 'bl' ? 0.1 + 0.3 * Math.sin(Math.PI * u) : 0.12;
+        D.hipL = -0.5 + 0.38 * a; D.hipR = -0.5 - 0.38 * a; D.spread = spl;
+        if (b.type === 'bl') { const lead = b.from === 'R' ? 'hipR' : 'hipL'; D[lead] = -0.2 - 0.6 * Math.sin(Math.PI * u); }
+        D.knL = Math.min(1.7, 0.4 - D.hipL * 0.9); D.knR = Math.min(1.7, 0.4 - D.hipR * 0.9);
+      }
+      if (S.sp && S.sp.kind === 'juke') { const sw = Math.sin(S.sp.u * Math.PI * 2) * S.sp.dir; D.shX = 0.34 * sw; D.leanZ = -0.34 * sw; D.legW = 0; }
+    }
+    // the ball itself (it tweens for a moment after the mode changes so nothing pops)
+    if (S.snapT > 0) { S.snapT -= dt; S.bp.lerp(want, Math.min(1, 14 * dt)); } else S.bp.copy(want);
+    if (mode === 'beat') { S.g.rotation.x -= dt * 6 * (moving ? 1 : 0.5); }
+    if (mode !== 'rt') { S.g.rotation.y *= 0.9; }
+  }
+  S.g.position.copy(S.bp); S.sh.position.set(S.bp.x, 0.025, S.bp.z); const hs = 1 - 0.45 * Math.min(1, Math.max(0, (S.bp.y - DB.R) / 1.2)); S.sh.scale.setScalar(hs); S.sh.material.opacity = 0.28 * hs * S.k;
+  return D;
+}
 function mkUpdate(dt) {
   MK.t += dt; const t = MK.t, B = MK, P = MK.pos;
   const G = 45, JV = 17, FV = 22, SP = 9;
@@ -2850,11 +3023,11 @@ function mkUpdate(dt) {
   }
   B.glideAmt += ((B.gliding ? 1 : 0) - B.glideAmt) * Math.min(1, 10 * dt);
   // Tuto
-  const H = B.hero; H.root.position.copy(P); H.root.rotation.y = B.face;
+  const H = B.hero, DBD = mkDribbleStep(dt, mag, mx, mz); H.root.position.copy(P); H.root.rotation.y = B.face + (DBD ? DBD.yaw : 0);
   const lx = mx * Math.cos(B.face) - mz * Math.sin(B.face), lz = mx * Math.sin(B.face) + mz * Math.cos(B.face);
   const gr = B.gr;
   poseCharacter(H, { mag: !gr && !B.held && mag > 0.1 ? mag : 0, zr: 0, grounded: gr ? true : B.grounded, sit: 0, dance: -1, flipT: B.flipT, airT: B.airT, glide: B.glideAmt, hold: 0, ride: 0,
-    sx: lx * mag, sz: lz * mag, held: !!B.held, gliding: B.gliding, grab: gr ? 1 : 0, grabUp: gr ? gr.hg : 0, grabLow: gr ? gr.sq : 0, shAmt: B.flipT < 0 && !gr ? B.shAmt : 0, shLoad: B.shLoad, shExt: B.shExt, t, tms: t * 1000 }, dt);
+    sx: lx * mag, sz: lz * mag, held: !!B.held, gliding: B.gliding, grab: gr ? 1 : 0, grabUp: gr ? gr.hg : 0, grabLow: gr ? gr.sq : 0, shAmt: B.flipT < 0 && !gr ? B.shAmt : 0, shLoad: B.shLoad, shExt: B.shExt, db: DBD, t, tms: t * 1000 }, dt);
   if (B.shAmt > 0.01) mkReadHand();
   B.shadow.position.set(P.x, ground + 0.04, P.z);
   const ss = 1 / (1 + Math.max(0, P.y - ground) * 0.15); B.shadow.scale.setScalar(ss); B.shadow.material.opacity = 0.2 * ss;
@@ -2914,6 +3087,7 @@ function mkSetExplore(on) {
   if (on) mkToast('Explore! Walk and jump on your build');
 }
 mkEl('mkExplore').addEventListener('click', () => mkSetExplore(true));
+mkEl('mkDrib').addEventListener('click', e => { MK.dribble = !MK.dribble; e.currentTarget.textContent = '🏀 Dribble: ' + (MK.dribble ? 'on' : 'off'); });
 mkBtn('mkBuild', () => mkSetExplore(false));
 mkEl('mkSaveB').addEventListener('click', () => mkToast(mkAutosave() ? 'Saved on this device' : 'Saving is blocked here, use .json'));
 mkEl('mkLoadB').addEventListener('click', () => { let s = null; try { s = localStorage.getItem(MKSAVE); } catch (e) { } mkToast(s && mkLoadText(s) ? 'Loaded your save' : 'No save found'); mkEl('mkPanel').hidden = true; });

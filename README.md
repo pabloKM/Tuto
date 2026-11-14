@@ -98,3 +98,6 @@ Grab the purple **JAM** disc to drop into a band room with four Tutos: singer (m
 
 ### Jam together
 Tap **👥 Play together** in Jam to start or join a room (same codes as the planet). Everyone who is in Jam shares the band: you each pick an instrument (a **P1/P2…** tag shows who is on what), the backing band mutes any part a real player has taken, tempo is shared, and everyone's notes are heard live. Each player can record their own mix. Notes travel over the room's presence channel, so expect a little network lag.
+
+### Dribbling (Tuto Maker)
+Tuto now always has a basketball in Maker (toggle with **🏀 Dribble** in the ☰ menu). Standing still he dances while handling it: same-hand dribbles, crossovers, between the legs, behind the back, plus occasional show moves (spinning the ball on a fingertip, rolling it across his arms). Moving he dribbles on the run, and when you reverse or switch direction he does a one-foot spin or a juke. Both hands are placed on the ball with a small two-bone arm solver. The ball disappears for the jump shot, grabs, flips, glides and when a rival has him.
